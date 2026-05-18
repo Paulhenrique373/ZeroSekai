@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "317808702260",
+    "project_id": "zerosekai-6898f",
+    "storage_bucket": "zerosekai-6898f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:317808702260:android:0a6d186ef1329f4018eb61",
+        "android_client_info": {
+          "package_name": "com.example.zerosekai"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBYyJrQMdG7is1fTG0WDsjJ0gPpwcYzdFo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
