@@ -34,9 +34,7 @@ import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
 
 import com.example.zerosekai.R
-
 import com.example.zerosekai.data.model.Comment
-
 import com.example.zerosekai.viewmodel.HomeViewModel
 
 import com.google.firebase.auth.FirebaseAuth
@@ -69,39 +67,50 @@ fun HomeScreen(
 
     Scaffold(
 
+        containerColor = Color(0xFF050505),
+
         bottomBar = {
 
             NavigationBar(
                 containerColor = Color(0xFF050505)
             ) {
 
+                // HOME
                 NavigationBarItem(
                     selected = true,
-                    onClick = {},
+                    onClick = { },
                     icon = {
                         Icon(
                             Icons.Default.Home,
-                            null,
+                            contentDescription = null,
                             tint = Color.White
                         )
                     }
                 )
 
-                NavigationBarItem(
-                    selected = false,
-                    onClick = {},
-                    icon = {
-                        Icon(
-                            Icons.Default.Search,
-                            null,
-                            tint = Color.White
-                        )
-                    }
-                )
-
+                // SEARCH
                 NavigationBarItem(
                     selected = false,
                     onClick = {
+
+                        navController.navigate(
+                            "search"
+                        )
+                    },
+                    icon = {
+                        Icon(
+                            Icons.Default.Search,
+                            contentDescription = null,
+                            tint = Color.White
+                        )
+                    }
+                )
+
+                // CREATE POST
+                NavigationBarItem(
+                    selected = false,
+                    onClick = {
+
                         navController.navigate(
                             "create_post"
                         )
@@ -109,13 +118,13 @@ fun HomeScreen(
                     icon = {
                         Icon(
                             Icons.Default.AddBox,
-                            null,
+                            contentDescription = null,
                             tint = Color.White
                         )
                     }
                 )
 
-                // 🔥 PERFIL
+                // PROFILE
                 NavigationBarItem(
                     selected = false,
                     onClick = {
@@ -127,7 +136,7 @@ fun HomeScreen(
                     icon = {
                         Icon(
                             Icons.Default.Person,
-                            null,
+                            contentDescription = null,
                             tint = Color.White
                         )
                     }
@@ -141,9 +150,7 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(
-                    Color(0xFF050505)
-                )
+                .background(Color(0xFF050505))
         ) {
 
             // TOP BAR
@@ -152,7 +159,10 @@ fun HomeScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
+                        .padding(
+                            horizontal = 16.dp,
+                            vertical = 16.dp
+                        ),
 
                     horizontalArrangement =
                     Arrangement.SpaceBetween,
@@ -171,18 +181,18 @@ fun HomeScreen(
                     Row {
 
                         Icon(
-                            Icons.Default.Favorite,
-                            null,
+                            Icons.Default.FavoriteBorder,
+                            contentDescription = null,
                             tint = Color.White
                         )
 
                         Spacer(
-                            Modifier.width(12.dp)
+                            modifier = Modifier.width(16.dp)
                         )
 
                         Icon(
                             Icons.Default.Send,
-                            null,
+                            contentDescription = null,
                             tint = Color.White
                         )
                     }
@@ -192,7 +202,11 @@ fun HomeScreen(
             // STORIES
             item {
 
-                LazyRow {
+                LazyRow(
+                    modifier = Modifier.padding(
+                        bottom = 12.dp
+                    )
+                ) {
 
                     items(stories) { story ->
 
@@ -200,13 +214,13 @@ fun HomeScreen(
                             horizontalAlignment =
                             Alignment.CenterHorizontally,
 
-                            modifier =
-                            Modifier.padding(8.dp)
+                            modifier = Modifier
+                                .padding(horizontal = 8.dp)
                         ) {
 
                             Box(
                                 modifier = Modifier
-                                    .size(72.dp)
+                                    .size(74.dp)
                                     .clip(CircleShape)
                                     .background(
                                         Brush.linearGradient(
@@ -230,7 +244,7 @@ fun HomeScreen(
                                     contentDescription = null,
 
                                     modifier = Modifier
-                                        .size(66.dp)
+                                        .size(68.dp)
                                         .clip(CircleShape),
 
                                     contentScale =
@@ -239,7 +253,7 @@ fun HomeScreen(
                             }
 
                             Spacer(
-                                Modifier.height(6.dp)
+                                modifier = Modifier.height(6.dp)
                             )
 
                             Text(
@@ -258,7 +272,6 @@ fun HomeScreen(
                 val isLiked =
                     post.likes.contains(currentUid)
 
-                // 🔥 COMENTÁRIOS
                 var commentText by remember {
                     mutableStateOf("")
                 }
@@ -269,7 +282,7 @@ fun HomeScreen(
                     )
                 }
 
-                LaunchedEffect(Unit) {
+                LaunchedEffect(post.id) {
 
                     viewModel.getComments(
                         post.id
@@ -282,10 +295,9 @@ fun HomeScreen(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 8.dp),
+                        .padding(bottom = 14.dp),
 
-                    shape =
-                    RoundedCornerShape(0.dp),
+                    shape = RoundedCornerShape(0.dp),
 
                     colors =
                     CardDefaults.cardColors(
@@ -298,8 +310,9 @@ fun HomeScreen(
 
                         // HEADER
                         Row(
-                            modifier =
-                            Modifier.padding(12.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
 
                             verticalAlignment =
                             Alignment.CenterVertically
@@ -343,7 +356,7 @@ fun HomeScreen(
                             }
 
                             Spacer(
-                                Modifier.width(12.dp)
+                                modifier = Modifier.width(12.dp)
                             )
 
                             Column {
@@ -352,6 +365,7 @@ fun HomeScreen(
                                     text = post.userName,
                                     color = Color.White,
                                     fontWeight = FontWeight.Bold,
+
                                     modifier = Modifier.clickable {
 
                                         navController.navigate(
@@ -361,17 +375,14 @@ fun HomeScreen(
                                 )
 
                                 Text(
-                                    text =
-                                    "São Paulo, Brasil",
-
+                                    text = "São Paulo, Brasil",
                                     color = Color.Gray,
-
                                     fontSize = 12.sp
                                 )
                             }
                         }
 
-                        // IMAGEM REAL
+                        // POST IMAGE
                         Image(
                             painter =
                             rememberAsyncImagePainter(
@@ -384,6 +395,7 @@ fun HomeScreen(
                                 .fillMaxWidth()
                                 .height(390.dp)
                                 .clickable {
+
                                     navController.navigate(
                                         "post_detail/${post.id}"
                                     )
@@ -397,7 +409,10 @@ fun HomeScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(12.dp),
+                                .padding(
+                                    horizontal = 12.dp,
+                                    vertical = 14.dp
+                                ),
 
                             horizontalArrangement =
                             Arrangement.SpaceBetween
@@ -432,37 +447,37 @@ fun HomeScreen(
                                 )
 
                                 Spacer(
-                                    Modifier.width(14.dp)
+                                    modifier = Modifier.width(16.dp)
                                 )
 
                                 Icon(
                                     Icons.Default.ChatBubbleOutline,
-                                    null,
+                                    contentDescription = null,
                                     tint = Color.White
                                 )
 
                                 Spacer(
-                                    Modifier.width(14.dp)
+                                    modifier = Modifier.width(16.dp)
                                 )
 
                                 Icon(
                                     Icons.Default.Send,
-                                    null,
+                                    contentDescription = null,
                                     tint = Color.White
                                 )
                             }
 
                             Icon(
                                 Icons.Default.BookmarkBorder,
-                                null,
+                                contentDescription = null,
                                 tint = Color.White
                             )
                         }
 
-                        // CAPTION
+                        // CAPTION + COMMENTS
                         Column(
-                            modifier =
-                            Modifier.padding(12.dp)
+                            modifier = Modifier
+                                .padding(horizontal = 12.dp)
                         ) {
 
                             Text(
@@ -476,7 +491,7 @@ fun HomeScreen(
                             )
 
                             Spacer(
-                                Modifier.height(6.dp)
+                                modifier = Modifier.height(8.dp)
                             )
 
                             Text(
@@ -487,10 +502,10 @@ fun HomeScreen(
                             )
 
                             Spacer(
-                                Modifier.height(12.dp)
+                                modifier = Modifier.height(14.dp)
                             )
 
-                            // 🔥 LISTA COMENTÁRIOS
+                            // COMMENTS
                             comments.forEach { comment ->
 
                                 Text(
@@ -503,15 +518,15 @@ fun HomeScreen(
                                 )
 
                                 Spacer(
-                                    Modifier.height(4.dp)
+                                    modifier = Modifier.height(5.dp)
                                 )
                             }
 
                             Spacer(
-                                Modifier.height(12.dp)
+                                modifier = Modifier.height(12.dp)
                             )
 
-                            // 🔥 CAMPO COMENTAR
+                            // COMMENT FIELD
                             OutlinedTextField(
 
                                 value = commentText,
@@ -521,7 +536,10 @@ fun HomeScreen(
                                 },
 
                                 placeholder = {
-                                    Text("Comentar...")
+
+                                    Text(
+                                        "Comentar..."
+                                    )
                                 },
 
                                 modifier =
@@ -540,15 +558,21 @@ fun HomeScreen(
                                     Color.Magenta,
 
                                     unfocusedBorderColor =
-                                    Color.Gray
+                                    Color.Gray,
+
+                                    focusedContainerColor =
+                                    Color(0xFF111111),
+
+                                    unfocusedContainerColor =
+                                    Color(0xFF111111)
                                 )
                             )
 
                             Spacer(
-                                Modifier.height(8.dp)
+                                modifier = Modifier.height(10.dp)
                             )
 
-                            // 🔥 BOTÃO COMENTAR
+                            // COMMENT BUTTON
                             Button(
 
                                 onClick = {
@@ -561,7 +585,8 @@ fun HomeScreen(
 
                                             postId = post.id,
 
-                                            text = commentText
+                                            text =
+                                            commentText.trim()
                                         )
 
                                         commentText = ""
@@ -569,11 +594,24 @@ fun HomeScreen(
                                 },
 
                                 modifier =
-                                Modifier.fillMaxWidth()
+                                Modifier.fillMaxWidth(),
+
+                                colors =
+                                ButtonDefaults.buttonColors(
+                                    containerColor =
+                                    Color.White
+                                )
                             ) {
 
-                                Text("Comentar")
+                                Text(
+                                    text = "Comentar",
+                                    color = Color.Black
+                                )
                             }
+
+                            Spacer(
+                                modifier = Modifier.height(14.dp)
+                            )
                         }
                     }
                 }

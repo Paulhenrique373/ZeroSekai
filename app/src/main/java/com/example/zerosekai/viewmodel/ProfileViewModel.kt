@@ -2,23 +2,18 @@ package com.example.zerosekai.viewmodel
 
 import android.content.Context
 import android.net.Uri
-
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-
 import com.example.zerosekai.data.model.User
 import com.example.zerosekai.data.repository.ProfileRepository
-
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-
 import kotlinx.coroutines.launch
 
 class ProfileViewModel : ViewModel() {
 
-    private val repository =
-        ProfileRepository()
+    private val repository = ProfileRepository()
 
     private val _user =
         MutableStateFlow<User?>(null)
@@ -40,35 +35,48 @@ class ProfileViewModel : ViewModel() {
 
     init {
 
-        loadUser()
+        refreshUser()
     }
 
-    fun loadUser() {
+    fun refreshUser() {
 
         viewModelScope.launch {
 
             try {
 
-                _user.value =
+                _error.value = null
+
+                val updatedUser =
                     repository.getUser()
+
+                _user.value =
+                    updatedUser
 
             } catch (e: Exception) {
 
+                e.printStackTrace()
+
                 _error.value =
-                    "Erro ao carregar perfil"
+                    e.message
+                        ?: "Erro ao carregar perfil"
             }
         }
     }
 
-    fun updateProfile(
+    fun loadUser() {
 
+        refreshUser()
+    }
+
+    fun updateProfile(
         username: String,
         bio: String,
         context: Context? = null,
         imageUri: Uri? = null,
         onFinished: () -> Unit = {}
-
     ) {
+
+        if (_saving.value) return
 
         viewModelScope.launch {
 
@@ -78,36 +86,57 @@ class ProfileViewModel : ViewModel() {
 
             try {
 
-                val photoUrl =
-                    if (context != null && imageUri != null) {
+                val currentUser =
+                    _user.value
+
+                var finalPhotoUrl =
+                    currentUser?.photoUrl ?: ""
+
+                if (
+                    context != null &&
+                    imageUri != null
+                ) {
+
+                    finalPhotoUrl =
                         repository.uploadProfilePhoto(
-                            context,
-                            imageUri
+                            context = context,
+                            imageUri = imageUri
                         )
-                    } else {
-                        null
-                    }
+                }
 
                 repository.updateProfile(
-
-                    username,
-                    bio,
-                    photoUrl
+                    username = username,
+                    bio = bio,
+                    photoUrl = finalPhotoUrl
                 )
 
-                loadUser()
+                val updatedUser =
+                    repository.getUser()
+
+                _user.value =
+                    updatedUser
+
+                refreshUser()
 
                 onFinished()
 
             } catch (e: Exception) {
 
+                e.printStackTrace()
+
                 _error.value =
-                    "Erro ao salvar perfil"
+                    e.message
+                        ?: "Erro ao salvar perfil"
 
             } finally {
 
                 _saving.value = false
             }
         }
+    }
+
+    fun clearError() {
+
+        _error.value = null
     }
 }

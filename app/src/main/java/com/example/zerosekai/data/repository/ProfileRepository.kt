@@ -4,14 +4,18 @@ import android.content.Context
 import android.net.Uri
 
 import com.example.zerosekai.data.model.User
+import com.example.zerosekai.supabase
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
-import com.google.firebase.storage.FirebaseStorage
+
+import io.github.jan.supabase.storage.storage
 
 import kotlinx.coroutines.tasks.await
+
+import java.util.UUID
 
 class ProfileRepository {
 
@@ -21,9 +25,6 @@ class ProfileRepository {
     private val firestore =
         FirebaseFirestore.getInstance()
 
-    private val storage =
-        FirebaseStorage.getInstance()
-
     suspend fun getUser(): User? {
 
         val currentUser =
@@ -32,72 +33,149 @@ class ProfileRepository {
         val uid =
             currentUser.uid
 
-        val doc =
-            firestore
-                .collection("users")
-                .document(uid)
-                .get()
-                .await()
+        return try {
 
-        val fallbackName =
-            currentUser.displayName
-                ?: currentUser.email?.substringBefore("@")
-                ?: "Zero User"
+            val document =
+                firestore
+                    .collection("users")
+                    .document(uid)
+                    .get()
+                    .await()
 
-        val fallbackUser = User(
-            uid = uid,
-            username = fallbackName,
-            email = currentUser.email ?: "",
-            bio = "Usuario oficial do ZeroSekai",
-            photoUrl = currentUser.photoUrl?.toString() ?: ""
-        )
+            val fallbackUsername =
+                currentUser.displayName
+                    ?: currentUser.email
+                        ?.substringBefore("@")
+                    ?: "Zero User"
 
-        return doc.toObject(User::class.java)
-            ?.copy(
+            val user = User(
+
                 uid = uid,
-                email = doc.getString("email") ?: fallbackUser.email,
-                username = doc.getString("username") ?: fallbackUser.username,
-                bio = doc.getString("bio") ?: fallbackUser.bio,
-                photoUrl = doc.getString("photoUrl") ?: fallbackUser.photoUrl
+
+                username =
+                document.getString("username")
+                    ?: fallbackUsername,
+
+                email =
+                document.getString("email")
+                    ?: (currentUser.email ?: ""),
+
+                bio =
+                document.getString("bio")
+                    ?: "Usuário oficial do ZeroSekai",
+
+                photoUrl =
+                document.getString("photoUrl")
+                    ?: (
+                            currentUser.photoUrl
+                                ?.toString()
+                                ?: ""
+                            )
             )
-            ?: fallbackUser
+
+            if (!document.exists()) {
+
+                firestore
+                    .collection("users")
+                    .document(uid)
+                    .set(user)
+                    .await()
+            }
+
+            user
+
+        } catch (e: Exception) {
+
+            e.printStackTrace()
+
+            User(
+
+                uid = uid,
+
+                username =
+                currentUser.displayName
+                    ?: "Zero User",
+
+                email =
+                currentUser.email ?: "",
+
+                bio =
+                "Usuário oficial do ZeroSekai",
+
+                photoUrl =
+                currentUser.photoUrl
+                    ?.toString()
+                    ?: ""
+            )
+        }
     }
 
     suspend fun updateProfile(
+
         username: String,
         bio: String,
         photoUrl: String? = null
+
     ) {
 
         val currentUser =
-            auth.currentUser ?: return
+            auth.currentUser
+                ?: throw Exception(
+                    "Usuário não autenticado"
+                )
 
         val uid =
             currentUser.uid
 
-        val updates = mutableMapOf<String, Any>(
-            "uid" to uid,
-            "username" to username,
-            "email" to (currentUser.email ?: ""),
-            "bio" to bio
-        )
+        val currentData =
+            getUser()
 
-        if (!photoUrl.isNullOrBlank()) {
-            updates["photoUrl"] = photoUrl
-        }
+        val finalPhotoUrl =
+
+            if (!photoUrl.isNullOrBlank()) {
+
+                photoUrl
+
+            } else {
+
+                currentData?.photoUrl ?: ""
+            }
+
+        val updates =
+            hashMapOf(
+
+                "uid" to uid,
+
+                "username" to username,
+
+                "email" to (
+                        currentUser.email ?: ""
+                        ),
+
+                "bio" to bio,
+
+                "photoUrl" to finalPhotoUrl
+            )
 
         firestore
             .collection("users")
             .document(uid)
-            .set(updates, SetOptions.merge())
+            .set(
+                updates,
+                SetOptions.merge()
+            )
             .await()
 
         val profileUpdates =
             UserProfileChangeRequest.Builder()
                 .setDisplayName(username)
                 .apply {
-                    if (!photoUrl.isNullOrBlank()) {
-                        setPhotoUri(Uri.parse(photoUrl))
+
+                    if (finalPhotoUrl.isNotBlank()) {
+
+                        setPhotoUri(
+                            Uri.parse(finalPhotoUrl)
+                        )
                     }
                 }
                 .build()
@@ -108,23 +186,54 @@ class ProfileRepository {
     }
 
     suspend fun uploadProfilePhoto(
+
         context: Context,
         imageUri: Uri
-    ): String? {
+
+    ): String {
 
         val currentUser =
-            auth.currentUser ?: return null
+            auth.currentUser
+                ?: throw Exception(
+                    "Usuário não autenticado"
+                )
 
-        val ref =
-            storage.reference
-                .child("profile_photos")
-                .child("${currentUser.uid}.jpg")
+        try {
 
-        ref.putFile(imageUri)
-            .await()
+            val inputStream =
+                context.contentResolver
+                    .openInputStream(imageUri)
+                    ?: throw Exception(
+                        "Erro ao abrir imagem"
+                    )
 
-        return ref.downloadUrl
-            .await()
-            .toString()
+            val bytes =
+                inputStream.readBytes()
+
+            inputStream.close()
+
+            val fileName =
+                "${currentUser.uid}_${UUID.randomUUID()}.jpg"
+
+            val bucket =
+                supabase.storage
+                    .from("zerosekai-storage")
+
+            bucket.upload(
+                path = fileName,
+                data = bytes
+            )
+
+            return bucket.publicUrl(fileName)
+
+        } catch (e: Exception) {
+
+            e.printStackTrace()
+
+            throw Exception(
+                e.message
+                    ?: "Erro ao enviar imagem"
+            )
+        }
     }
 }

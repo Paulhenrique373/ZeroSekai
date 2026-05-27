@@ -10,70 +10,171 @@ class FollowRepository {
 
     private val firestore = FirebaseFirestore.getInstance()
 
-    suspend fun toggleFollow(targetUserId: String) {
+    suspend fun toggleFollow(
+        targetUserId: String
+    ) {
 
-        val currentUser =
-            auth.currentUser ?: return
+        try {
 
-        val currentUid =
-            currentUser.uid
+            val currentUser =
+                auth.currentUser ?: return
 
-        if (currentUid == targetUserId) return
+            val currentUid =
+                currentUser.uid
 
-        val currentUserRef =
-            firestore.collection("users")
-                .document(currentUid)
+            if (currentUid == targetUserId) {
+                return
+            }
 
-        val targetUserRef =
-            firestore.collection("users")
-                .document(targetUserId)
+            val currentUserRef =
+                firestore
+                    .collection("users")
+                    .document(currentUid)
 
-        firestore.runTransaction { transaction ->
+            val targetUserRef =
+                firestore
+                    .collection("users")
+                    .document(targetUserId)
 
-            val currentSnapshot =
-                transaction.get(currentUserRef)
+            firestore.runTransaction { transaction ->
 
-            val targetSnapshot =
-                transaction.get(targetUserRef)
+                val currentSnapshot =
+                    transaction.get(currentUserRef)
+
+                val targetSnapshot =
+                    transaction.get(targetUserRef)
+
+                val following =
+                    currentSnapshot
+                        .get("following")
+                            as? List<String>
+                        ?: emptyList()
+
+                val followers =
+                    targetSnapshot
+                        .get("followers")
+                            as? List<String>
+                        ?: emptyList()
+
+                val isFollowing =
+                    following.contains(targetUserId)
+
+                if (isFollowing) {
+
+                    transaction.update(
+                        currentUserRef,
+                        "following",
+                        following - targetUserId
+                    )
+
+                    transaction.update(
+                        targetUserRef,
+                        "followers",
+                        followers - currentUid
+                    )
+
+                } else {
+
+                    transaction.update(
+                        currentUserRef,
+                        "following",
+                        following + targetUserId
+                    )
+
+                    transaction.update(
+                        targetUserRef,
+                        "followers",
+                        followers + currentUid
+                    )
+                }
+
+            }.await()
+
+        } catch (e: Exception) {
+
+            e.printStackTrace()
+        }
+    }
+
+    suspend fun isFollowing(
+        targetUserId: String
+    ): Boolean {
+
+        return try {
+
+            val currentUid =
+                auth.currentUser?.uid
+                    ?: return false
+
+            val document =
+                firestore
+                    .collection("users")
+                    .document(currentUid)
+                    .get()
+                    .await()
 
             val following =
-                currentSnapshot.get("following")
+                document.get("following")
                         as? List<String>
                     ?: emptyList()
+
+            following.contains(targetUserId)
+
+        } catch (e: Exception) {
+
+            false
+        }
+    }
+
+    suspend fun getFollowersCount(
+        userId: String
+    ): Int {
+
+        return try {
+
+            val document =
+                firestore
+                    .collection("users")
+                    .document(userId)
+                    .get()
+                    .await()
 
             val followers =
-                targetSnapshot.get("followers")
+                document.get("followers")
                         as? List<String>
                     ?: emptyList()
 
-            if (following.contains(targetUserId)) {
+            followers.size
 
-                transaction.update(
-                    currentUserRef,
-                    "following",
-                    following - targetUserId
-                )
+        } catch (e: Exception) {
 
-                transaction.update(
-                    targetUserRef,
-                    "followers",
-                    followers - currentUid
-                )
+            0
+        }
+    }
 
-            } else {
+    suspend fun getFollowingCount(
+        userId: String
+    ): Int {
 
-                transaction.update(
-                    currentUserRef,
-                    "following",
-                    following + targetUserId
-                )
+        return try {
 
-                transaction.update(
-                    targetUserRef,
-                    "followers",
-                    followers + currentUid
-                )
-            }
-        }.await()
+            val document =
+                firestore
+                    .collection("users")
+                    .document(userId)
+                    .get()
+                    .await()
+
+            val following =
+                document.get("following")
+                        as? List<String>
+                    ?: emptyList()
+
+            following.size
+
+        } catch (e: Exception) {
+
+            0
+        }
     }
 }

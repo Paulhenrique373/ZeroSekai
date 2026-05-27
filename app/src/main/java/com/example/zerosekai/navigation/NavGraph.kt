@@ -13,6 +13,8 @@ import com.example.zerosekai.ui.screens.profile.EditProfileScreen
 import com.example.zerosekai.ui.screens.profile.ProfileScreen
 import com.example.zerosekai.ui.screens.profile.UserProfileScreen
 
+import com.example.zerosekai.ui.screens.search.SearchScreen
+
 @Composable
 fun NavGraph() {
 
@@ -38,6 +40,10 @@ fun NavGraph() {
 
         composable("edit_profile") {
             EditProfileScreen(navController)
+        }
+
+        composable("search") {
+            SearchScreen(navController)
         }
 
         composable("post_detail/{postId}") { backStackEntry ->
