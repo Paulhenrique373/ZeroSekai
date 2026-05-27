@@ -70,7 +70,17 @@ class ProfileRepository {
                             currentUser.photoUrl
                                 ?.toString()
                                 ?: ""
-                            )
+                            ),
+
+                followers =
+                document.get("followers")
+                        as? List<String>
+                    ?: emptyList(),
+
+                following =
+                document.get("following")
+                        as? List<String>
+                    ?: emptyList()
             )
 
             if (!document.exists()) {
@@ -105,7 +115,12 @@ class ProfileRepository {
                 photoUrl =
                 currentUser.photoUrl
                     ?.toString()
-                    ?: ""
+                    ?: "",
+
+                followers = emptyList(),
+
+                following = emptyList()
+
             )
         }
     }

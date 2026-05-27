@@ -38,10 +38,15 @@ class UserProfileViewModel : ViewModel() {
                         .get()
                         .await()
 
-                _user.value =
-                    doc.toObject(User::class.java)
+                if (doc.exists()) {
 
-            } catch (_: Exception) {
+                    _user.value =
+                        doc.toObject(User::class.java)
+                }
+
+            } catch (e: Exception) {
+
+                e.printStackTrace()
             }
         }
     }
@@ -50,9 +55,16 @@ class UserProfileViewModel : ViewModel() {
 
         viewModelScope.launch {
 
-            followRepository.toggleFollow(userId)
+            try {
 
-            loadUser(userId)
+                followRepository.toggleFollow(userId)
+
+                loadUser(userId)
+
+            } catch (e: Exception) {
+
+                e.printStackTrace()
+            }
         }
     }
 }

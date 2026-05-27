@@ -52,7 +52,7 @@ class PostRepository {
             val fileName =
                 "${UUID.randomUUID()}.jpg"
 
-            // 🔥 LER IMAGEM REAL
+            // LER IMAGEM
             val inputStream =
                 context.contentResolver
                     .openInputStream(imageUri)
@@ -69,7 +69,7 @@ class PostRepository {
                 "Imagem lida: ${bytes.size} bytes"
             )
 
-            // 🔥 UPLOAD SUPABASE
+            // UPLOAD SUPABASE
             supabase.storage
                 .from("zerosekai-storage")
                 .upload(
@@ -82,18 +82,16 @@ class PostRepository {
                 "Upload Supabase OK"
             )
 
-            // 🔥 URL DA IMAGEM
+            // URL PÚBLICA REAL
             val imageUrl =
-                supabase.storage
-                    .from("zerosekai-storage")
-                    .publicUrl(fileName)
+                "https://hnxhkrzjbueoootxinvt.supabase.co/storage/v1/object/public/zerosekai-storage/$fileName"
 
             Log.d(
                 "ZEROSK",
                 "URL imagem: $imageUrl"
             )
 
-            // 🔥 BUSCAR USUÁRIO
+            // BUSCAR USUÁRIO
             val userDoc =
                 firestore
                     .collection("users")
@@ -114,14 +112,14 @@ class PostRepository {
                 "Usuário carregado"
             )
 
-            // 🔥 ID POST
+            // ID POST
             val postId =
                 firestore
                     .collection("posts")
                     .document()
                     .id
 
-            // 🔥 CRIAR POST
+            // CRIAR POST
             val post = Post(
 
                 id = postId,
@@ -147,7 +145,7 @@ class PostRepository {
                 "Post criado"
             )
 
-            // 🔥 SALVAR FIRESTORE
+            // SALVAR FIRESTORE
             firestore
                 .collection("posts")
                 .document(postId)
@@ -175,7 +173,7 @@ class PostRepository {
         }
     }
 
-    // 🔥 CURTIR / DESCURTIR POST
+    // CURTIR / DESCURTIR POST
     suspend fun toggleLike(
         postId: String
     ) {
@@ -221,7 +219,7 @@ class PostRepository {
         }.await()
     }
 
-    // 🔥 ADICIONAR COMENTÁRIO
+    // ADICIONAR COMENTÁRIO
     suspend fun addComment(
         postId: String,
         text: String
@@ -233,7 +231,6 @@ class PostRepository {
         val uid =
             currentUser.uid
 
-        // PEGAR DADOS USUÁRIO
         val userDoc =
             firestore
                 .collection("users")
@@ -249,7 +246,6 @@ class PostRepository {
             userDoc.getString("photoUrl")
                 ?: ""
 
-        // ID COMENTÁRIO
         val commentId =
             firestore
                 .collection("posts")
@@ -258,7 +254,6 @@ class PostRepository {
                 .document()
                 .id
 
-        // CRIAR COMENTÁRIO
         val comment = Comment(
 
             id = commentId,
@@ -277,7 +272,6 @@ class PostRepository {
             System.currentTimeMillis()
         )
 
-        // SALVAR
         firestore
             .collection("posts")
             .document(postId)
@@ -287,7 +281,7 @@ class PostRepository {
             .await()
     }
 
-    // 🔥 PEGAR COMENTÁRIOS
+    // PEGAR COMENTÁRIOS
     fun getCommentsRealtime(
         postId: String,
         onChange: (List<Comment>) -> Unit

@@ -30,7 +30,6 @@ import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -160,8 +159,6 @@ fun ProfileScreen(
                 modifier = Modifier.fillMaxWidth(0.9f)
             )
 
-            Spacer(Modifier.height(20.dp))
-
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -181,8 +178,8 @@ fun ProfileScreen(
                 )
 
                 ProfileStat(
-                    value = totalLikes.toString(),
-                    label = "curtidas"
+                    value = user?.following?.size?.toString() ?: "0",
+                    label = "seguindo"
                 )
             }
 
@@ -216,31 +213,6 @@ fun ProfileScreen(
             }
         }
 
-        Spacer(Modifier.height(18.dp))
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(ZeroBackground)
-                .padding(horizontal = 18.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                Icons.Default.GridOn,
-                contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.size(20.dp)
-            )
-
-            Spacer(Modifier.width(8.dp))
-
-            Text(
-                text = "Publicacoes",
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp
-            )
-        }
 
         if (userPosts.isEmpty()) {
 
