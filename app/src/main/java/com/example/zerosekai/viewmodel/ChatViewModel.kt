@@ -61,4 +61,10 @@ class ChatViewModel : ViewModel() {
             )
         }
     }
+
+    override fun onCleared() {
+        super.onCleared()
+
+        repository.clearListeners()
+    }
 }

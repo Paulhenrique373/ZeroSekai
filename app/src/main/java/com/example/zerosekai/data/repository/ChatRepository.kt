@@ -8,6 +8,7 @@ import kotlinx.coroutines.tasks.await
 
 class ChatRepository {
 
+
     private val firestore = FirebaseFirestore.getInstance()
 
     private var chatsListener: ListenerRegistration? = null
@@ -47,6 +48,8 @@ class ChatRepository {
         text: String
     ) {
 
+        val now = System.currentTimeMillis()
+
         val messageRef = firestore
             .collection("chats")
             .document(chatId)
@@ -58,7 +61,7 @@ class ChatRepository {
                 id = messageRef.id,
                 senderId = senderId,
                 text = text,
-                timestamp = System.currentTimeMillis()
+                timestamp = now
             )
         ).await()
 
@@ -67,7 +70,7 @@ class ChatRepository {
             .update(
                 mapOf(
                     "lastMessage" to text,
-                    "lastTimestamp" to System.currentTimeMillis()
+                    "lastTimestamp" to now
                 )
             )
             .await()
@@ -110,11 +113,13 @@ class ChatRepository {
         val listener = firestore
             .collection("chats")
             .whereArrayContains("participants", uid)
-            // 🔥 REMOVIDO ORDERBY (causa principal do bug)
             .addSnapshotListener { snapshot, _ ->
 
                 val chats = snapshot
                     ?.toObjects(Chat::class.java)
+                    ?.sortedByDescending {
+                        it.lastTimestamp
+                    }
                     ?: emptyList()
 
                 onChatsChanged(chats)
@@ -126,10 +131,14 @@ class ChatRepository {
     }
 
     fun clearListeners() {
+
         chatsListener?.remove()
         chatsListener = null
 
-        messagesListeners.values.forEach { it.remove() }
+        messagesListeners.values.forEach {
+            it.remove()
+        }
+
         messagesListeners.clear()
     }
 }

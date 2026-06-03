@@ -31,7 +31,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 
-import coil.compose.rememberAsyncImagePainter
+import coil.compose.AsyncImage
 
 import com.example.zerosekai.R
 import com.example.zerosekai.data.model.Comment
@@ -172,8 +172,9 @@ fun HomeScreen(
                 ) {
 
                     Text(
-                        text = "ZeroSekai",
-                        fontSize = 28.sp,
+                        text = "ZEROSEKAI",
+                        fontSize = 30.sp,
+                        letterSpacing = 1.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
@@ -305,9 +306,12 @@ fun HomeScreen(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 14.dp),
+                        .padding(
+                            horizontal = 10.dp,
+                            vertical = 8.dp
+                        ),
 
-                    shape = RoundedCornerShape(0.dp),
+                    shape = RoundedCornerShape(18.dp),
 
                     colors =
                     CardDefaults.cardColors(
@@ -330,20 +334,15 @@ fun HomeScreen(
 
                             if (post.userPhoto.isNotBlank()) {
 
-                                Image(
-                                    painter =
-                                    rememberAsyncImagePainter(
-                                        post.userPhoto
-                                    ),
-
+                                AsyncImage(
+                                    model = post.userPhoto,
                                     contentDescription = null,
 
                                     modifier = Modifier
                                         .size(44.dp)
                                         .clip(CircleShape),
 
-                                    contentScale =
-                                    ContentScale.Crop
+                                    contentScale = ContentScale.Crop
                                 )
 
                             } else {
@@ -393,11 +392,8 @@ fun HomeScreen(
                         }
 
                         // POST IMAGE
-                        Image(
-                            painter =
-                            rememberAsyncImagePainter(
-                                post.imageUrl
-                            ),
+                        AsyncImage(
+                            model = post.imageUrl,
 
                             contentDescription = null,
 
@@ -411,8 +407,7 @@ fun HomeScreen(
                                     )
                                 },
 
-                            contentScale =
-                            ContentScale.Crop
+                            contentScale = ContentScale.Crop
                         )
 
                         // ACTIONS
@@ -516,7 +511,7 @@ fun HomeScreen(
                             )
 
                             // COMMENTS
-                            comments.forEach { comment ->
+                            comments.take(3).forEach { comment ->
 
                                 Text(
                                     text =
@@ -537,6 +532,7 @@ fun HomeScreen(
                             )
 
                             // COMMENT FIELD
+                            // COMMENT FIELD
                             OutlinedTextField(
 
                                 value = commentText,
@@ -544,6 +540,10 @@ fun HomeScreen(
                                 onValueChange = {
                                     commentText = it
                                 },
+
+                                shape = RoundedCornerShape(20.dp),
+
+                                singleLine = true,
 
                                 placeholder = {
 
@@ -557,6 +557,7 @@ fun HomeScreen(
 
                                 colors =
                                 OutlinedTextFieldDefaults.colors(
+
 
                                     focusedTextColor =
                                     Color.White,

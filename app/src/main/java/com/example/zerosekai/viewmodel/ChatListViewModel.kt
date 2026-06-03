@@ -18,18 +18,22 @@ class ChatListViewModel : ViewModel() {
 
     fun loadChats(uid: String) {
 
-        // 🔥 só impede duplicar o MESMO usuário
+        // Evita criar listener duplicado para o mesmo usuário
         if (currentUid == uid) return
 
         currentUid = uid
 
         repository.listenChats(uid) { list ->
-            chats = list.distinctBy { it.id }
+
+            chats = list.distinctBy {
+                it.id
+            }
         }
     }
 
     override fun onCleared() {
-        repository.clearListeners()
         super.onCleared()
+
+        repository.clearListeners()
     }
 }

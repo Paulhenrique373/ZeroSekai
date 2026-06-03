@@ -90,7 +90,13 @@ fun ChatItem(
         FirebaseFirestore.getInstance()
     }
 
-    val otherUserId = chat.participants.firstOrNull().orEmpty()
+    val currentUid =
+        FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
+
+    val otherUserId =
+        chat.participants.firstOrNull {
+            it != currentUid
+        }.orEmpty()
 
     var user by remember {
         mutableStateOf<User?>(null)
