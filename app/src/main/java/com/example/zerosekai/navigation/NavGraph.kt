@@ -8,6 +8,8 @@ import androidx.navigation.compose.rememberNavController
 import com.example.zerosekai.ui.screens.home.CreatePostScreen
 import com.example.zerosekai.ui.screens.home.HomeScreen
 import com.example.zerosekai.ui.screens.home.PostDetailScreen
+import com.example.zerosekai.ui.screens.home.ChatScreen
+import com.example.zerosekai.ui.screens.home.ChatListScreen
 
 import com.example.zerosekai.ui.screens.profile.EditProfileScreen
 import com.example.zerosekai.ui.screens.profile.ProfileScreen
@@ -18,8 +20,7 @@ import com.example.zerosekai.ui.screens.search.SearchScreen
 @Composable
 fun NavGraph() {
 
-    val navController =
-        rememberNavController()
+    val navController = rememberNavController()
 
     NavHost(
         navController = navController,
@@ -48,8 +49,7 @@ fun NavGraph() {
 
         composable("post_detail/{postId}") { backStackEntry ->
 
-            val postId =
-                backStackEntry.arguments?.getString("postId") ?: ""
+            val postId = backStackEntry.arguments?.getString("postId") ?: ""
 
             PostDetailScreen(
                 navController = navController,
@@ -59,12 +59,28 @@ fun NavGraph() {
 
         composable("user_profile/{userId}") { backStackEntry ->
 
-            val userId =
-                backStackEntry.arguments?.getString("userId") ?: ""
+            val userId = backStackEntry.arguments?.getString("userId") ?: ""
 
             UserProfileScreen(
                 navController = navController,
                 userId = userId
+            )
+        }
+
+        composable("chat_list") {
+            ChatListScreen(
+                onOpenChat = { chatId ->
+                    navController.navigate("chat/$chatId")
+                }
+            )
+        }
+
+        composable("chat/{chatId}") { backStackEntry ->
+
+            val chatId = backStackEntry.arguments?.getString("chatId") ?: ""
+
+            ChatScreen(
+                chatId = chatId
             )
         }
     }

@@ -190,11 +190,21 @@ fun HomeScreen(
                             modifier = Modifier.width(16.dp)
                         )
 
-                        Icon(
-                            Icons.Default.Send,
-                            contentDescription = null,
-                            tint = Color.White
-                        )
+                        IconButton(
+                            onClick = {
+
+                                navController.navigate(
+                                    "chat_list"
+                                )
+                            }
+                        ) {
+
+                            Icon(
+                                Icons.Default.Send,
+                                contentDescription = "Mensagens",
+                                tint = Color.White
+                            )
+                        }
                     }
                 }
             }

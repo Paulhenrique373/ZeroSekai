@@ -35,6 +35,9 @@ import kotlinx.coroutines.tasks.await
 import com.example.zerosekai.data.model.Post
 import com.example.zerosekai.data.model.User
 import com.example.zerosekai.data.repository.FollowRepository
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.zerosekai.viewmodel.ChatViewModel
+import com.google.firebase.auth.FirebaseAuth
 
 private val ZeroBackground = Color(0xFF050505)
 private val ZeroSurface = Color(0xFF111111)
@@ -50,6 +53,8 @@ fun UserProfileScreen(
     val repository = remember {
         FollowRepository()
     }
+
+    val chatViewModel: ChatViewModel = viewModel()
 
     val scope = rememberCoroutineScope()
 
@@ -232,47 +237,84 @@ fun UserProfileScreen(
                 modifier = Modifier.height(20.dp)
             )
 
-            Button(
-                onClick = {
-
-                    scope.launch {
-
-                        repository.toggleFollow(
-                            userId
-                        )
-
-                        isFollowing =
-                            !isFollowing
-
-                        followersCount =
-                            if (isFollowing) {
-                                followersCount + 1
-                            } else {
-                                followersCount - 1
-                            }
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
-                shape = RoundedCornerShape(10.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = ZeroAccent,
-                    contentColor = Color.Black
-                )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
 
-                Text(
-                    text =
-                    if (isFollowing) {
-                        "Seguindo"
-                    } else {
-                        "Seguir"
+                Button(
+                    onClick = {
+
+                        scope.launch {
+
+                            repository.toggleFollow(
+                                userId
+                            )
+
+                            isFollowing =
+                                !isFollowing
+
+                            followersCount =
+                                if (isFollowing) {
+                                    followersCount + 1
+                                } else {
+                                    followersCount - 1
+                                }
+                        }
                     },
-                    fontWeight = FontWeight.Bold
-                )
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = ZeroAccent,
+                        contentColor = Color.Black
+                    )
+                ) {
+
+                    Text(
+                        text =
+                        if (isFollowing) {
+                            "Seguindo"
+                        } else {
+                            "Seguir"
+                        },
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Button(
+                    onClick = {
+
+                        val currentUid =
+                            FirebaseAuth
+                                .getInstance()
+                                .currentUser
+                                ?.uid
+                                ?: return@Button
+
+                        chatViewModel.createChat(
+                            currentUid = currentUid,
+                            otherUid = userId
+                        ) { chatId ->
+
+                            navController.navigate(
+                                "chat/$chatId"
+                            )
+                        }
+                    },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp)
+                ) {
+
+                    Text("Mensagem")
+                }
             }
 
+            Spacer(
+                modifier = Modifier.height(24.dp)
+            )
             Spacer(
                 modifier = Modifier.height(24.dp)
             )
