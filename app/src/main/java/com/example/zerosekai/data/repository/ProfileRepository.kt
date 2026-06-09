@@ -198,6 +198,49 @@ class ProfileRepository {
         currentUser
             .updateProfile(profileUpdates)
             .await()
+
+        syncUserPostSnapshots(
+            uid = uid,
+            username = username,
+            photoUrl = finalPhotoUrl
+        )
+    }
+
+    private suspend fun syncUserPostSnapshots(
+        uid: String,
+        username: String,
+        photoUrl: String
+    ) {
+        val postsSnapshot =
+            firestore
+                .collection("posts")
+                .whereEqualTo(
+                    "userId",
+                    uid
+                )
+                .get()
+                .await()
+
+        postsSnapshot.documents
+            .chunked(450)
+            .forEach { documents ->
+                val batch =
+                    firestore.batch()
+
+                documents.forEach { document ->
+                    batch.update(
+                        document.reference,
+                        mapOf(
+                            "userName" to username,
+                            "userPhoto" to photoUrl
+                        )
+                    )
+                }
+
+                batch
+                    .commit()
+                    .await()
+            }
     }
 
     suspend fun uploadProfilePhoto(

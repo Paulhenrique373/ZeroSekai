@@ -7,16 +7,37 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Save
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -25,22 +46,24 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
+import com.example.zerosekai.ui.components.ZeroElevatedPanel
+import com.example.zerosekai.ui.components.ZeroGradientButton
+import com.example.zerosekai.ui.components.ZeroPrimaryGradient
+import com.example.zerosekai.ui.components.ZeroScreenBackground
+import com.example.zerosekai.ui.components.ZeroTopBar
+import com.example.zerosekai.ui.components.zeroTextFieldColors
+import com.example.zerosekai.ui.theme.ZSurfaceElevated
+import com.example.zerosekai.ui.theme.ZText
+import com.example.zerosekai.ui.theme.ZTextMuted
 import com.example.zerosekai.viewmodel.ProfileViewModel
-
-private val ZeroBackground = Color(0xFF050505)
-private val ZeroSurface = Color(0xFF111111)
-private val ZeroTextMuted = Color(0xFF9B9B9B)
-private val ZeroAccent = Color(0xFFEDEDED)
 
 @Composable
 fun EditProfileScreen(
     navController: NavHostController
 ) {
-
     val viewModel: ProfileViewModel = viewModel()
 
     val user by viewModel.user.collectAsState()
@@ -68,9 +91,7 @@ fun EditProfileScreen(
     }
 
     LaunchedEffect(user) {
-
         user?.let { currentUser ->
-
             if (username.isBlank()) {
                 username = currentUser.username
             }
@@ -82,9 +103,7 @@ fun EditProfileScreen(
     }
 
     LaunchedEffect(error) {
-
         error?.let { errorMessage ->
-
             Toast.makeText(
                 context,
                 errorMessage,
@@ -93,158 +112,135 @@ fun EditProfileScreen(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(ZeroBackground)
+    ZeroScreenBackground(
+        modifier = Modifier.fillMaxSize()
     ) {
-
-        TopBar(
-            onBackClick = {
-                navController.popBackStack()
-            }
-        )
-
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp)
         ) {
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            ProfilePhotoSection(
-                photoUrl = user?.photoUrl,
-                selectedPhotoUri = selectedPhotoUri,
-                onPhotoClick = {
-                    photoPicker.launch("image/*")
+            ZeroTopBar(
+                title = "Editar perfil",
+                subtitle = "Atualize sua identidade no ZeroSekai",
+                onBackClick = {
+                    navController.popBackStack()
                 }
             )
 
-            Spacer(modifier = Modifier.height(28.dp))
-
-            OutlinedTextField(
-                value = username,
-                onValueChange = { newValue ->
-                    username = newValue
-                },
-                label = {
-                    Text(text = "Nome")
-                },
-                singleLine = true,
+            ZeroElevatedPanel(
                 modifier = Modifier.fillMaxWidth(),
-                colors = profileFieldColors()
-            )
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            OutlinedTextField(
-                value = bio,
-                onValueChange = { newValue ->
-                    bio = newValue
-                },
-                label = {
-                    Text(text = "Bio")
-                },
-                minLines = 3,
-                maxLines = 5,
-                modifier = Modifier.fillMaxWidth(),
-                colors = profileFieldColors()
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Button(
-                onClick = {
-
-                    if (username.trim().isBlank()) {
-
-                        Toast.makeText(
-                            context,
-                            "Digite seu nome",
-                            Toast.LENGTH_SHORT
-                        ).show()
-
-                        return@Button
-                    }
-
-                    viewModel.updateProfile(
-                        username = username.trim(),
-                        bio = bio.trim(),
-                        context = context,
-                        imageUri = selectedPhotoUri
-                    ) {
-
-                        Toast.makeText(
-                            context,
-                            "Perfil atualizado",
-                            Toast.LENGTH_SHORT
-                        ).show()
-
-                        navController.popBackStack()
-                    }
-                },
-                enabled = !saving,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                shape = RoundedCornerShape(10.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = ZeroAccent,
-                    contentColor = Color.Black
-                )
+                contentPadding = PaddingValues(18.dp)
             ) {
-
-                if (saving) {
-
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(22.dp),
-                        color = Color.Black,
-                        strokeWidth = 2.dp
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    ProfilePhotoSection(
+                        photoUrl = user?.photoUrl,
+                        selectedPhotoUri = selectedPhotoUri,
+                        onPhotoClick = {
+                            photoPicker.launch("image/*")
+                        }
                     )
 
-                } else {
+                    Spacer(modifier = Modifier.height(26.dp))
 
-                    Text(
-                        text = "Salvar alterações",
-                        fontWeight = FontWeight.Bold
+                    OutlinedTextField(
+                        value = username,
+                        onValueChange = { newValue ->
+                            username = newValue
+                        },
+                        label = {
+                            Text(text = "Nome")
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = null
+                            )
+                        },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(18.dp),
+                        colors = zeroTextFieldColors()
                     )
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    OutlinedTextField(
+                        value = bio,
+                        onValueChange = { newValue ->
+                            bio = newValue
+                        },
+                        label = {
+                            Text(text = "Bio")
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Info,
+                                contentDescription = null
+                            )
+                        },
+                        minLines = 3,
+                        maxLines = 5,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(18.dp),
+                        colors = zeroTextFieldColors()
+                    )
+
+                    Spacer(modifier = Modifier.height(22.dp))
+
+                    ZeroGradientButton(
+                        text = if (saving) {
+                            "Salvando..."
+                        } else {
+                            "Salvar alterações"
+                        },
+                        onClick = {
+                            if (username.trim().isBlank()) {
+                                Toast.makeText(
+                                    context,
+                                    "Digite seu nome",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+
+                                return@ZeroGradientButton
+                            }
+
+                            viewModel.updateProfile(
+                                username = username.trim(),
+                                bio = bio.trim(),
+                                context = context,
+                                imageUri = selectedPhotoUri
+                            ) {
+                                Toast.makeText(
+                                    context,
+                                    "Perfil atualizado",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+
+                                navController.popBackStack()
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !saving,
+                        leadingIcon = Icons.Default.Save
+                    )
+
+                    if (saving) {
+                        Spacer(modifier = Modifier.height(18.dp))
+
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = ZText,
+                            strokeWidth = 2.dp
+                        )
+                    }
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun TopBar(
-    onBackClick: () -> Unit
-) {
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-
-        IconButton(
-            onClick = onBackClick
-        ) {
-
-            Icon(
-                imageVector = Icons.Default.ArrowBack,
-                contentDescription = "Voltar",
-                tint = Color.White
-            )
-        }
-
-        Text(
-            text = "Editar perfil",
-            color = Color.White,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold
-        )
     }
 }
 
@@ -254,74 +250,71 @@ private fun ProfilePhotoSection(
     selectedPhotoUri: Uri?,
     onPhotoClick: () -> Unit
 ) {
-
     val imageModel = selectedPhotoUri ?: photoUrl
 
     Box(
         contentAlignment = Alignment.BottomEnd,
         modifier = Modifier
-            .size(120.dp)
-            .clickable {
-                onPhotoClick()
-            }
+            .size(126.dp)
+            .clickable(onClick = onPhotoClick)
     ) {
-
-        if (imageModel != null && imageModel.toString().isNotBlank()) {
-
-            Image(
-                painter = rememberAsyncImagePainter(model = imageModel),
-                contentDescription = "Foto de perfil",
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clip(CircleShape),
-                contentScale = ContentScale.Crop
-            )
-
-        } else {
-
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clip(CircleShape)
-                    .background(ZeroSurface),
-                contentAlignment = Alignment.Center
-            ) {
-
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = null,
-                    tint = ZeroTextMuted,
-                    modifier = Modifier.size(54.dp)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(CircleShape)
+                .background(ZeroPrimaryGradient)
+                .padding(4.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            if (imageModel != null && imageModel.toString().isNotBlank()) {
+                Image(
+                    painter = rememberAsyncImagePainter(model = imageModel),
+                    contentDescription = "Foto de perfil",
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(CircleShape),
+                    contentScale = ContentScale.Crop
                 )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(CircleShape)
+                        .background(ZSurfaceElevated),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = null,
+                        tint = ZTextMuted,
+                        modifier = Modifier.size(54.dp)
+                    )
+                }
             }
         }
 
         Box(
             modifier = Modifier
-                .size(38.dp)
+                .size(40.dp)
                 .clip(CircleShape)
-                .background(ZeroAccent),
+                .background(ZText),
             contentAlignment = Alignment.Center
         ) {
-
             Icon(
                 imageVector = Icons.Default.CameraAlt,
                 contentDescription = "Alterar foto",
                 tint = Color.Black,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(21.dp)
             )
         }
     }
-}
 
-@Composable
-private fun profileFieldColors() =
-    OutlinedTextFieldDefaults.colors(
-        focusedTextColor = Color.White,
-        unfocusedTextColor = Color.White,
-        focusedLabelColor = Color.White,
-        unfocusedLabelColor = ZeroTextMuted,
-        cursorColor = Color.White,
-        focusedBorderColor = Color.White,
-        unfocusedBorderColor = Color(0xFF333333)
+    Spacer(modifier = Modifier.height(10.dp))
+
+    Text(
+        text = "Toque na foto para alterar",
+        color = ZTextMuted,
+        style = MaterialTheme.typography.bodyMedium,
+        fontWeight = FontWeight.Medium
     )
+}

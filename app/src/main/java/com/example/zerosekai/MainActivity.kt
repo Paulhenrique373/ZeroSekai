@@ -4,41 +4,79 @@ import android.os.Bundle
 import android.util.Log
 import android.util.Patterns
 import android.widget.Toast
-
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-
-import androidx.compose.material3.*
-
-import androidx.compose.runtime.*
-
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextFieldColors
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-
 import androidx.lifecycle.lifecycleScope
-
 import com.example.zerosekai.navigation.NavGraph
+import com.example.zerosekai.ui.theme.ZAccent
+import com.example.zerosekai.ui.theme.ZBackground
+import com.example.zerosekai.ui.theme.ZBorder
+import com.example.zerosekai.ui.theme.ZPrimary
+import com.example.zerosekai.ui.theme.ZSecondary
+import com.example.zerosekai.ui.theme.ZSurface
+import com.example.zerosekai.ui.theme.ZText
+import com.example.zerosekai.ui.theme.ZTextMuted
 import com.example.zerosekai.ui.theme.ZeroSekaiTheme
-
 import com.google.firebase.auth.FirebaseAuth
-
-// 🔥 SUPABASE
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -50,19 +88,13 @@ class MainActivity : ComponentActivity() {
 
         auth = FirebaseAuth.getInstance()
 
-        // 🔥 TESTE SUPABASE
         lifecycleScope.launch {
-
             try {
-
-                // 🔥 TESTE SIMPLES
                 Log.d(
                     "SUPABASE",
                     "Supabase conectado com sucesso!"
                 )
-
             } catch (e: Exception) {
-
                 Log.e(
                     "SUPABASE",
                     "Erro: ${e.message}"
@@ -71,14 +103,11 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-
             ZeroSekaiTheme {
-
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-
                     LoginScreen(auth)
                 }
             }
@@ -90,7 +119,6 @@ class MainActivity : ComponentActivity() {
 fun LoginScreen(
     auth: FirebaseAuth
 ) {
-
     var email by remember {
         mutableStateOf("")
     }
@@ -99,372 +127,497 @@ fun LoginScreen(
         mutableStateOf("")
     }
 
-    // 🔥 COMEÇA NO LOGIN
     var isLogin by remember {
         mutableStateOf(true)
     }
 
-    // 🔥 CONTROLE LOGIN
     var isLoggedIn by remember {
+        mutableStateOf(false)
+    }
+
+    var passwordVisible by remember {
         mutableStateOf(false)
     }
 
     val context = LocalContext.current
 
-    // 🔥 ABRIR HOME
+    fun submitAuth() {
+        if (email.isBlank() || password.isBlank()) {
+            Toast.makeText(
+                context,
+                "Preencha todos os campos.",
+                Toast.LENGTH_LONG
+            ).show()
+
+            return
+        }
+
+        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            Toast.makeText(
+                context,
+                "Email invalido.",
+                Toast.LENGTH_LONG
+            ).show()
+
+            return
+        }
+
+        if (!email.endsWith("@gmail.com")) {
+            Toast.makeText(
+                context,
+                "Use um email Gmail.",
+                Toast.LENGTH_LONG
+            ).show()
+
+            return
+        }
+
+        if (password.length < 6) {
+            Toast.makeText(
+                context,
+                "A senha precisa ter pelo menos 6 caracteres.",
+                Toast.LENGTH_LONG
+            ).show()
+
+            return
+        }
+
+        if (isLogin) {
+            auth.signInWithEmailAndPassword(
+                email.trim(),
+                password.trim()
+            ).addOnCompleteListener {
+                if (it.isSuccessful) {
+                    Toast.makeText(
+                        context,
+                        "Login realizado!",
+                        Toast.LENGTH_SHORT
+                    ).show()
+
+                    isLoggedIn = true
+                } else {
+                    val errorMessage = when {
+                        it.exception?.message?.contains(
+                            "badly formatted"
+                        ) == true -> {
+                            "Email invalido."
+                        }
+
+                        it.exception?.message?.contains(
+                            "INVALID_LOGIN_CREDENTIALS"
+                        ) == true -> {
+                            "Email ou senha incorretos."
+                        }
+
+                        it.exception?.message?.contains(
+                            "There is no user record"
+                        ) == true -> {
+                            "Voce precisa criar uma conta primeiro."
+                        }
+
+                        else -> {
+                            "Erro ao fazer login."
+                        }
+                    }
+
+                    Toast.makeText(
+                        context,
+                        errorMessage,
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+        } else {
+            auth.createUserWithEmailAndPassword(
+                email.trim(),
+                password.trim()
+            ).addOnCompleteListener {
+                if (it.isSuccessful) {
+                    Toast.makeText(
+                        context,
+                        "Conta criada!",
+                        Toast.LENGTH_SHORT
+                    ).show()
+
+                    isLoggedIn = true
+                } else {
+                    val errorMessage = when {
+                        it.exception?.message?.contains(
+                            "already in use"
+                        ) == true -> {
+                            "Esse email ja esta cadastrado."
+                        }
+
+                        it.exception?.message?.contains(
+                            "Password should be at least 6 characters"
+                        ) == true -> {
+                            "A senha precisa ter pelo menos 6 caracteres."
+                        }
+
+                        it.exception?.message?.contains(
+                            "badly formatted"
+                        ) == true -> {
+                            "Email invalido."
+                        }
+
+                        else -> {
+                            "Erro ao criar conta."
+                        }
+                    }
+
+                    Toast.makeText(
+                        context,
+                        errorMessage,
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+        }
+    }
+
     if (isLoggedIn) {
-
         NavGraph()
-
     } else {
-
         Box(
             modifier = Modifier.fillMaxSize()
         ) {
-
-            // 🔥 IMAGEM FUNDO
             Image(
-                painter = painterResource(
-                    id = R.drawable.fundo
-                ),
-
+                painter = painterResource(id = R.drawable.fundo),
                 contentDescription = null,
-
                 contentScale = ContentScale.Crop,
-
                 modifier = Modifier.fillMaxSize()
             )
 
-            // 🔥 OVERLAY ESCURO
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(
                         Brush.verticalGradient(
                             colors = listOf(
-                                Color.Black.copy(alpha = 0.6f),
-                                Color.Transparent,
-                                Color.Black.copy(alpha = 0.8f)
+                                ZBackground.copy(alpha = 0.58f),
+                                ZPrimary.copy(alpha = 0.20f),
+                                ZBackground.copy(alpha = 0.98f)
                             )
                         )
                     )
             )
 
-            // 🔥 CONTEÚDO
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.radialGradient(
+                            colors = listOf(
+                                ZAccent.copy(alpha = 0.26f),
+                                Color.Transparent,
+                                ZBackground.copy(alpha = 0.34f)
+                            )
+                        )
+                    )
+            )
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(24.dp),
-
-                verticalArrangement = Arrangement.Center,
-
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .safeDrawingPadding()
+                    .imePadding()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 28.dp, vertical = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Top
             ) {
+                Spacer(modifier = Modifier.height(18.dp))
 
-                // 🔥 LOGO
                 Image(
-                    painter = painterResource(
-                        id = R.drawable.logo
-                    ),
-
-                    contentDescription = "Logo",
-
-                    modifier = Modifier.size(390.dp)
+                    painter = painterResource(id = R.drawable.logo),
+                    contentDescription = "Logo ZeroSekai",
+                    modifier = Modifier.size(190.dp)
                 )
 
-                Spacer(
-                    modifier = Modifier.height(12.dp)
-                )
+                Spacer(modifier = Modifier.height(26.dp))
 
-                // 🔥 NOME APP
                 Text(
-                    text = "ZeroSekai",
-
-                    color = Color.White,
-
-                    fontSize = 34.sp,
-
-                    fontWeight = FontWeight.Bold
+                    text = if (isLogin) {
+                        "Bem-vindo de volta"
+                    } else {
+                        "Crie sua conta"
+                    },
+                    color = ZText,
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.ExtraBold,
+                    textAlign = TextAlign.Center
                 )
 
-                Spacer(
-                    modifier = Modifier.height(6.dp)
-                )
+                Spacer(modifier = Modifier.height(6.dp))
 
-                // 🔥 SUBTÍTULO
                 Text(
-                    text = "Sua rede social anime 🚀",
-
-                    color = Color.LightGray,
-
-                    fontSize = 14.sp
-                )
-
-                Spacer(
-                    modifier = Modifier.height(32.dp)
-                )
-
-                // 🔥 EMAIL
-                OutlinedTextField(
-                    value = email,
-
-                    onValueChange = {
-                        email = it
+                    text = if (isLogin) {
+                        "Entre na sua conta e continue sua jornada"
+                    } else {
+                        "Comece sua jornada no universo ZeroSekai"
                     },
-
-                    label = {
-                        Text("Email")
-                    },
-
-                    modifier = Modifier.fillMaxWidth(),
-
-                    singleLine = true,
-
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Email
-                    )
+                    color = ZTextMuted,
+                    style = MaterialTheme.typography.bodyLarge,
+                    textAlign = TextAlign.Center
                 )
 
-                Spacer(
-                    modifier = Modifier.height(16.dp)
-                )
+                Spacer(modifier = Modifier.height(32.dp))
 
-                // 🔥 SENHA
-                OutlinedTextField(
-                    value = password,
-
-                    onValueChange = {
-                        password = it
-                    },
-
-                    label = {
-                        Text("Senha")
-                    },
-
-                    modifier = Modifier.fillMaxWidth(),
-
-                    singleLine = true,
-
-                    visualTransformation =
-                    PasswordVisualTransformation()
-                )
-
-                Spacer(
-                    modifier = Modifier.height(24.dp)
-                )
-
-                // 🔥 BOTÃO LOGIN/CADASTRO
-                Button(
-                    onClick = {
-
-                        // 🔥 VALIDAR CAMPOS
-                        if (
-                            email.isBlank() ||
-                            password.isBlank()
-                        ) {
-
-                            Toast.makeText(
-                                context,
-                                "Preencha todos os campos.",
-                                Toast.LENGTH_LONG
-                            ).show()
-
-                            return@Button
-                        }
-
-                        // 🔥 VALIDAR EMAIL
-                        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-
-                            Toast.makeText(
-                                context,
-                                "Email inválido.",
-                                Toast.LENGTH_LONG
-                            ).show()
-
-                            return@Button
-                        }
-
-                        // 🔥 ACEITAR APENAS GMAIL
-                        if (!email.endsWith("@gmail.com")) {
-
-                            Toast.makeText(
-                                context,
-                                "Use um email Gmail.",
-                                Toast.LENGTH_LONG
-                            ).show()
-
-                            return@Button
-                        }
-
-                        // 🔥 VALIDAR SENHA
-                        if (password.length < 6) {
-
-                            Toast.makeText(
-                                context,
-                                "A senha precisa ter pelo menos 6 caracteres.",
-                                Toast.LENGTH_LONG
-                            ).show()
-
-                            return@Button
-                        }
-
-                        // 🔥 LOGIN
-                        if (isLogin) {
-
-                            auth.signInWithEmailAndPassword(
-                                email.trim(),
-                                password.trim()
-                            ).addOnCompleteListener {
-
-                                if (it.isSuccessful) {
-
-                                    Toast.makeText(
-                                        context,
-                                        "Login realizado!",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-
-                                    // 🔥 ENTRAR HOME
-                                    isLoggedIn = true
-
-                                } else {
-
-                                    val errorMessage = when {
-
-                                        it.exception?.message?.contains(
-                                            "badly formatted"
-                                        ) == true -> {
-
-                                            "Email inválido."
-                                        }
-
-                                        it.exception?.message?.contains(
-                                            "INVALID_LOGIN_CREDENTIALS"
-                                        ) == true -> {
-
-                                            "Email ou senha incorretos."
-                                        }
-
-                                        it.exception?.message?.contains(
-                                            "There is no user record"
-                                        ) == true -> {
-
-                                            "Você precisa criar uma conta primeiro."
-                                        }
-
-                                        else -> {
-
-                                            "Erro ao fazer login."
-                                        }
-                                    }
-
-                                    Toast.makeText(
-                                        context,
-                                        errorMessage,
-                                        Toast.LENGTH_LONG
-                                    ).show()
-                                }
-                            }
-
-                        } else {
-
-                            // 🔥 CADASTRO
-                            auth.createUserWithEmailAndPassword(
-                                email.trim(),
-                                password.trim()
-                            ).addOnCompleteListener {
-
-                                if (it.isSuccessful) {
-
-                                    Toast.makeText(
-                                        context,
-                                        "Conta criada!",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-
-                                    // 🔥 ENTRAR HOME
-                                    isLoggedIn = true
-
-                                } else {
-
-                                    val errorMessage = when {
-
-                                        it.exception?.message?.contains(
-                                            "already in use"
-                                        ) == true -> {
-
-                                            "Esse email já está cadastrado."
-                                        }
-
-                                        it.exception?.message?.contains(
-                                            "Password should be at least 6 characters"
-                                        ) == true -> {
-
-                                            "A senha precisa ter pelo menos 6 caracteres."
-                                        }
-
-                                        it.exception?.message?.contains(
-                                            "badly formatted"
-                                        ) == true -> {
-
-                                            "Email inválido."
-                                        }
-
-                                        else -> {
-
-                                            "Erro ao criar conta."
-                                        }
-                                    }
-
-                                    Toast.makeText(
-                                        context,
-                                        errorMessage,
-                                        Toast.LENGTH_LONG
-                                    ).show()
-                                }
-                            }
-                        }
-                    },
-
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(55.dp)
+                        .widthIn(max = 440.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-
-                    Text(
-                        text =
-                        if (isLogin)
-                            "Entrar"
-                        else
-                            "Cadastrar",
-
-                        fontSize = 16.sp
+                    LoginTextField(
+                        value = email,
+                        onValueChange = {
+                            email = it
+                        },
+                        placeholder = "Email",
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Email,
+                                contentDescription = null
+                            )
+                        },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Email,
+                            imeAction = ImeAction.Next
+                        )
                     )
-                }
 
-                Spacer(
-                    modifier = Modifier.height(16.dp)
-                )
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                // 🔥 TROCAR LOGIN/CADASTRO
-                TextButton(
-                    onClick = {
+                    LoginTextField(
+                        value = password,
+                        onValueChange = {
+                            password = it
+                        },
+                        placeholder = "Senha",
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Lock,
+                                contentDescription = null
+                            )
+                        },
+                        trailingIcon = {
+                            IconButton(
+                                onClick = {
+                                    passwordVisible = !passwordVisible
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = if (passwordVisible) {
+                                        Icons.Default.VisibilityOff
+                                    } else {
+                                        Icons.Default.Visibility
+                                    },
+                                    contentDescription = if (passwordVisible) {
+                                        "Ocultar senha"
+                                    } else {
+                                        "Mostrar senha"
+                                    }
+                                )
+                            }
+                        },
+                        visualTransformation = if (passwordVisible) {
+                            VisualTransformation.None
+                        } else {
+                            PasswordVisualTransformation()
+                        },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = {
+                                submitAuth()
+                            }
+                        )
+                    )
 
-                        isLogin = !isLogin
+                    if (isLogin) {
+                        TextButton(
+                            onClick = {
+                                Toast.makeText(
+                                    context,
+                                    "Recuperacao de senha em breve.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            },
+                            modifier = Modifier.align(Alignment.End)
+                        ) {
+                            Text(
+                                text = "Esqueceu sua senha?",
+                                color = ZAccent,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    } else {
+                        Spacer(modifier = Modifier.height(18.dp))
                     }
-                ) {
 
-                    Text(
-                        text =
-                        if (isLogin)
-                            "Não tem conta? Cadastre-se"
-                        else
-                            "Já tem conta? Entrar",
+                    LoginActionButton(
+                        text = if (isLogin) {
+                            "Entrar"
+                        } else {
+                            "Criar conta"
+                        },
+                        onClick = {
+                            submitAuth()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
 
-                        color = Color.White
+                    Spacer(modifier = Modifier.height(18.dp))
+
+                    LoginFooter(
+                        isLogin = isLogin,
+                        onToggleMode = {
+                            isLogin = !isLogin
+                        }
                     )
                 }
+
+                Spacer(modifier = Modifier.height(28.dp))
             }
         }
     }
 }
+
+@Composable
+private fun LoginTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    leadingIcon: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    trailingIcon: (@Composable () -> Unit)? = null,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier
+            .fillMaxWidth()
+            .height(66.dp),
+        placeholder = {
+            Text(placeholder)
+        },
+        leadingIcon = leadingIcon,
+        trailingIcon = trailingIcon,
+        singleLine = true,
+        visualTransformation = visualTransformation,
+        keyboardOptions = keyboardOptions,
+        keyboardActions = keyboardActions,
+        shape = RoundedCornerShape(24.dp),
+        colors = loginTextFieldColors()
+    )
+}
+
+@Composable
+private fun LoginActionButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val shape = RoundedCornerShape(28.dp)
+
+    Button(
+        onClick = onClick,
+        modifier = modifier
+            .height(64.dp)
+            .clip(shape)
+            .background(
+                Brush.linearGradient(
+                    colors = listOf(
+                        ZPrimary,
+                        ZAccent,
+                        ZSecondary
+                    )
+                )
+            ),
+        shape = shape,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color.Transparent,
+            contentColor = ZText
+        ),
+        elevation = ButtonDefaults.buttonElevation(
+            defaultElevation = 0.dp,
+            pressedElevation = 0.dp
+        ),
+        border = BorderStroke(
+            width = 1.dp,
+            color = Color.White.copy(alpha = 0.22f)
+        ),
+        contentPadding = PaddingValues(horizontal = 22.dp)
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.ExtraBold
+        )
+    }
+}
+
+@Composable
+private fun LoginFooter(
+    isLogin: Boolean,
+    onToggleMode: () -> Unit
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text(
+            text = if (isLogin) {
+                "Ainda nao tem conta?"
+            } else {
+                "Ja tem conta?"
+            },
+            color = ZTextMuted,
+            style = MaterialTheme.typography.bodyMedium
+        )
+
+        Spacer(modifier = Modifier.width(6.dp))
+
+        TextButton(
+            onClick = onToggleMode,
+            contentPadding = PaddingValues(horizontal = 4.dp)
+        ) {
+            Text(
+                text = if (isLogin) {
+                    "Cadastre-se >"
+                } else {
+                    "Entrar >"
+                },
+                color = ZAccent,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
+@Composable
+private fun loginTextFieldColors(): TextFieldColors =
+    OutlinedTextFieldDefaults.colors(
+        focusedTextColor = ZText,
+        unfocusedTextColor = ZText,
+        focusedPlaceholderColor = ZTextMuted,
+        unfocusedPlaceholderColor = ZTextMuted,
+        focusedLeadingIconColor = ZAccent,
+        unfocusedLeadingIconColor = ZAccent.copy(alpha = 0.88f),
+        focusedTrailingIconColor = ZText,
+        unfocusedTrailingIconColor = ZTextMuted,
+        cursorColor = ZAccent,
+        focusedBorderColor = ZAccent.copy(alpha = 0.88f),
+        unfocusedBorderColor = ZBorder.copy(alpha = 0.88f),
+        focusedContainerColor = ZSurface.copy(alpha = 0.62f),
+        unfocusedContainerColor = ZSurface.copy(alpha = 0.52f)
+    )

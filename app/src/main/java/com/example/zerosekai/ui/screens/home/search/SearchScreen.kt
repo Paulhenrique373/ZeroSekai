@@ -1,49 +1,65 @@
 package com.example.zerosekai.ui.screens.search
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.PersonSearch
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import coil.compose.rememberAsyncImagePainter
 import com.example.zerosekai.data.model.User
+import com.example.zerosekai.ui.components.BottomBar
+import com.example.zerosekai.ui.components.ZeroAvatar
+import com.example.zerosekai.ui.components.ZeroEmptyState
+import com.example.zerosekai.ui.components.ZeroSectionHeader
+import com.example.zerosekai.ui.components.ZeroScreenBackground
+import com.example.zerosekai.ui.components.ZeroTopBar
+import com.example.zerosekai.ui.components.zeroTextFieldColors
+import com.example.zerosekai.ui.theme.ZBorder
+import com.example.zerosekai.ui.theme.ZCard
+import com.example.zerosekai.ui.theme.ZText
+import com.example.zerosekai.ui.theme.ZTextMuted
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
-
-private val ZeroBackground = Color(0xFF050505)
-private val ZeroSurface = Color(0xFF111111)
-private val ZeroMuted = Color(0xFF9B9B9B)
 
 @Composable
 fun SearchScreen(
     navController: NavHostController
 ) {
-
     var searchText by remember {
         mutableStateOf("")
     }
@@ -57,9 +73,7 @@ fun SearchScreen(
     }
 
     LaunchedEffect(searchText) {
-
         if (searchText.isBlank()) {
-
             users = emptyList()
             return@LaunchedEffect
         }
@@ -67,7 +81,6 @@ fun SearchScreen(
         loading = true
 
         try {
-
             val snapshot =
                 FirebaseFirestore
                     .getInstance()
@@ -79,121 +92,145 @@ fun SearchScreen(
                 snapshot
                     .toObjects(User::class.java)
                     .filter {
-
                         it.username.contains(
                             searchText,
                             ignoreCase = true
                         )
                     }
-
         } catch (e: Exception) {
-
             e.printStackTrace()
-
         } finally {
-
             loading = false
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(ZeroBackground)
+    ZeroScreenBackground(
+        modifier = Modifier.fillMaxSize()
     ) {
-
-        Spacer(
-            modifier = Modifier.height(12.dp)
-        )
-
-        Text(
-            text = "Pesquisar",
-            color = Color.White,
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(
-                horizontal = 20.dp
-            )
-        )
-
-        Spacer(
-            modifier = Modifier.height(18.dp)
-        )
-
-        OutlinedTextField(
-            value = searchText,
-            onValueChange = {
-                searchText = it
-            },
-            placeholder = {
-                Text(
-                    text = "Pesquisar usuários...",
-                    color = ZeroMuted
-                )
-            },
-            leadingIcon = {
-
-                Icon(
-                    imageVector = Icons.Default.Search,
-                    contentDescription = null,
-                    tint = ZeroMuted
-                )
-            },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(
-                imeAction = ImeAction.Search
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White,
-                focusedBorderColor = Color.White,
-                unfocusedBorderColor = Color(0xFF333333),
-                cursorColor = Color.White
-            )
-        )
-
-        Spacer(
-            modifier = Modifier.height(20.dp)
-        )
-
-        if (loading) {
-
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-
-                Text(
-                    text = "Carregando...",
-                    color = Color.White
+        Scaffold(
+            containerColor = Color.Transparent,
+            bottomBar = {
+                BottomBar(
+                    currentRoute = "search",
+                    onNavigate = { route ->
+                        navController.navigate(route) {
+                            launchSingleTop = true
+                            restoreState = true
+                            popUpTo("home") {
+                                saveState = true
+                            }
+                        }
+                    }
                 )
             }
-
-        } else {
-
-            LazyColumn(
-                modifier = Modifier.fillMaxSize()
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(horizontal = 16.dp)
             ) {
+                ZeroTopBar(
+                    title = "Buscar",
+                    subtitle = "Encontre perfis e novas conexoes"
+                )
 
-                items(users) { user ->
+                OutlinedTextField(
+                    value = searchText,
+                    onValueChange = {
+                        searchText = it
+                    },
+                    placeholder = {
+                        Text("Pesquisar usuários...")
+                    },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = null
+                        )
+                    },
+                    trailingIcon = {
+                        if (searchText.isNotBlank()) {
+                            IconButton(
+                                onClick = {
+                                    searchText = ""
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Limpar busca"
+                                )
+                            }
+                        }
+                    },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(
+                        imeAction = ImeAction.Search
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = zeroTextFieldColors()
+                )
 
-                    UserItem(
-                        user = user,
-                        onClick = {
+                Spacer(modifier = Modifier.height(14.dp))
 
-                            navController.navigate(
-                                "user_profile/${user.uid}"
+                when {
+                    loading -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                color = ZText
                             )
                         }
-                    )
+                    }
 
-                    HorizontalDivider(
-                        color = Color(0xFF1A1A1A)
-                    )
+                    searchText.isBlank() -> {
+                        ZeroEmptyState(
+                            icon = Icons.Default.PersonSearch,
+                            title = "Procure por um usuario",
+                            message = "Digite um nome para descobrir perfis no ZeroSekai.",
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+
+                    users.isEmpty() -> {
+                        ZeroEmptyState(
+                            icon = Icons.Default.Search,
+                            title = "Nada encontrado",
+                            message = "Tente outro nome ou uma busca mais curta.",
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+
+                    else -> {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(bottom = 16.dp)
+                        ) {
+                            item {
+                                ZeroSectionHeader(
+                                    title = "Resultados",
+                                    subtitle = "${users.size} perfis encontrados"
+                                )
+                            }
+
+                            items(
+                                items = users,
+                                key = { user -> user.uid }
+                            ) { user ->
+                                UserItem(
+                                    user = user,
+                                    onClick = {
+                                        navController.navigate(
+                                            "user_profile/${user.uid}"
+                                        )
+                                    }
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -205,83 +242,53 @@ private fun UserItem(
     user: User,
     onClick: () -> Unit
 ) {
-
-    Card(
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable {
-                onClick()
-            },
-        colors = CardDefaults.cardColors(
-            containerColor = ZeroBackground
+            .padding(vertical = 6.dp)
+            .clickable(onClick = onClick),
+        color = ZCard.copy(alpha = 0.92f),
+        shape = RoundedCornerShape(18.dp),
+        tonalElevation = 2.dp,
+        border = androidx.compose.foundation.BorderStroke(
+            width = 1.dp,
+            color = ZBorder
         )
     ) {
-
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(
-                    horizontal = 16.dp,
-                    vertical = 14.dp
-                ),
+                .padding(14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-
-            if (!user.photoUrl.isNullOrBlank()) {
-
-                Image(
-                    painter =
-                    rememberAsyncImagePainter(
-                        user.photoUrl
-                    ),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(58.dp)
-                        .clip(CircleShape),
-                    contentScale = ContentScale.Crop
-                )
-
-            } else {
-
-                Box(
-                    modifier = Modifier
-                        .size(58.dp)
-                        .clip(CircleShape)
-                        .background(ZeroSurface),
-                    contentAlignment = Alignment.Center
-                ) {
-
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = null,
-                        tint = ZeroMuted,
-                        modifier = Modifier.size(28.dp)
-                    )
-                }
-            }
-
-            Spacer(
-                modifier = Modifier.width(14.dp)
+            ZeroAvatar(
+                photoUrl = user.photoUrl,
+                size = 58.dp,
+                label = user.username
             )
 
-            Column {
+            Spacer(modifier = Modifier.width(14.dp))
 
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
                 Text(
-                    text = user.username,
-                    color = Color.White,
+                    text = user.username.ifBlank { "Zero User" },
+                    color = ZText,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 17.sp
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
 
-                Spacer(
-                    modifier = Modifier.height(3.dp)
-                )
+                Spacer(modifier = Modifier.height(3.dp))
 
                 Text(
-                    text = user.bio,
-                    color = ZeroMuted,
-                    fontSize = 13.sp,
-                    maxLines = 1
+                    text = user.bio.ifBlank { "Usuario do ZeroSekai" },
+                    color = ZTextMuted,
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }

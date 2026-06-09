@@ -1,44 +1,71 @@
 package com.example.zerosekai.ui.screens.home
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.AsyncImage
 import com.example.zerosekai.data.model.Chat
 import com.example.zerosekai.data.model.User
+import com.example.zerosekai.ui.components.BottomBar
+import com.example.zerosekai.ui.components.ZeroAvatar
+import com.example.zerosekai.ui.components.ZeroEmptyState
+import com.example.zerosekai.ui.components.ZeroSectionHeader
+import com.example.zerosekai.ui.components.ZeroScreenBackground
+import com.example.zerosekai.ui.components.ZeroTopBar
+import com.example.zerosekai.ui.theme.ZBorder
+import com.example.zerosekai.ui.theme.ZCard
+import com.example.zerosekai.ui.theme.ZSuccess
+import com.example.zerosekai.ui.theme.ZText
+import com.example.zerosekai.ui.theme.ZTextMuted
 import com.example.zerosekai.viewmodel.ChatListViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun ChatListScreen(
     viewModel: ChatListViewModel = viewModel(),
+    onNavigate: (String) -> Unit,
     onOpenChat: (String) -> Unit
 ) {
-
     val chats = viewModel.chats
 
     LaunchedEffect(Unit) {
-
         val uid = FirebaseAuth.getInstance().currentUser?.uid
 
         if (!uid.isNullOrEmpty()) {
@@ -46,35 +73,61 @@ fun ChatListScreen(
         }
     }
 
-    Column(
+    ZeroScreenBackground(
         modifier = Modifier.fillMaxSize()
     ) {
-
-        Text(
-            text = "Conversas",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(
-                start = 20.dp,
-                top = 20.dp,
-                bottom = 12.dp
-            )
-        )
-
-        LazyColumn(
-            contentPadding = PaddingValues(
-                horizontal = 12.dp,
-                vertical = 4.dp
-            )
-        ) {
-
-            items(chats) { chat ->
-
-                ChatItem(
-                    chat = chat,
-                    onClick = {
-                        onOpenChat(chat.id)
-                    }
+        Scaffold(
+            containerColor = Color.Transparent,
+            bottomBar = {
+                BottomBar(
+                    currentRoute = "chat_list",
+                    onNavigate = onNavigate
                 )
+            }
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(horizontal = 16.dp)
+            ) {
+                ZeroTopBar(
+                    title = "Conversas",
+                    subtitle = "Mensagens privadas em tempo real"
+                )
+
+                if (chats.isEmpty()) {
+                    ZeroEmptyState(
+                        icon = Icons.Default.Chat,
+                        title = "Nenhuma conversa ainda",
+                        message = "Quando você iniciar um chat, ele aparece aqui.",
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(bottom = 16.dp)
+                    ) {
+                        item {
+                            ZeroSectionHeader(
+                                title = "Recentes",
+                                subtitle = "${chats.size} conversas ativas"
+                            )
+                        }
+
+                        items(
+                            items = chats,
+                            key = { chat -> chat.id }
+                        ) { chat ->
+                            ChatItem(
+                                chat = chat,
+                                onClick = {
+                                    onOpenChat(chat.id)
+                                }
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -85,7 +138,6 @@ fun ChatItem(
     chat: Chat,
     onClick: () -> Unit
 ) {
-
     val firestore = remember {
         FirebaseFirestore.getInstance()
     }
@@ -103,9 +155,7 @@ fun ChatItem(
     }
 
     LaunchedEffect(otherUserId) {
-
         if (otherUserId.isNotEmpty()) {
-
             val snapshot = firestore
                 .collection("users")
                 .document(otherUserId)
@@ -117,11 +167,9 @@ fun ChatItem(
     }
 
     val time = remember(chat.lastTimestamp) {
-
         if (chat.lastTimestamp == 0L) {
             ""
         } else {
-
             SimpleDateFormat(
                 "HH:mm",
                 Locale.getDefault()
@@ -131,72 +179,60 @@ fun ChatItem(
         }
     }
 
-    Card(
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 5.dp)
-            .clickable {
-                onClick()
-            },
-        shape = RoundedCornerShape(18.dp),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 2.dp
-        )
+            .padding(vertical = 6.dp)
+            .clickable(onClick = onClick),
+        color = ZCard.copy(alpha = 0.92f),
+        shape = RoundedCornerShape(20.dp),
+        tonalElevation = 3.dp,
+        border = BorderStroke(1.dp, ZBorder)
     ) {
-
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(
-                    horizontal = 14.dp,
-                    vertical = 14.dp
-                ),
+                .padding(14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-
             Box {
-
-                AsyncImage(
-                    model = user?.photoUrl,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(62.dp)
-                        .clip(CircleShape)
+                ZeroAvatar(
+                    photoUrl = user?.photoUrl,
+                    size = 62.dp,
+                    label = user?.username.orEmpty()
                 )
 
                 Box(
                     modifier = Modifier
-                        .size(12.dp)
+                        .size(13.dp)
                         .align(Alignment.BottomEnd)
-                        .background(
-                            MaterialTheme.colorScheme.primary,
-                            CircleShape
-                        )
-                )
+                        .background(ZCard, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Surface(
+                        modifier = Modifier.size(11.dp),
+                        color = ZSuccess,
+                        shape = CircleShape
+                    ) {}
+                }
             }
 
-            Spacer(
-                modifier = Modifier.width(14.dp)
-            )
+            Spacer(modifier = Modifier.width(14.dp))
 
             Column(
                 modifier = Modifier.weight(1f)
             ) {
-
                 Text(
                     text = user?.username ?: "Carregando...",
+                    color = ZText,
                     fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.bodyLarge
-                )
-
-                Spacer(
-                    modifier = Modifier.height(4.dp)
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
 
                 Text(
-                    text = if (
-                        chat.lastMessage.isEmpty()
-                    ) {
+                    text = if (chat.lastMessage.isEmpty()) {
                         "Sem mensagens ainda"
                     } else {
                         chat.lastMessage
@@ -204,21 +240,29 @@ fun ChatItem(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme
-                        .colorScheme
-                        .onSurfaceVariant
+                    color = ZTextMuted
                 )
             }
 
-            Spacer(
-                modifier = Modifier.width(8.dp)
-            )
+            if (time.isNotBlank()) {
+                Spacer(modifier = Modifier.width(8.dp))
 
-            Text(
-                text = time,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.outline
-            )
+                Surface(
+                    color = ZCard,
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, ZBorder)
+                ) {
+                    Text(
+                        text = time,
+                        modifier = Modifier.padding(
+                            horizontal = 8.dp,
+                            vertical = 4.dp
+                        ),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = ZTextMuted
+                    )
+                }
+            }
         }
     }
 }

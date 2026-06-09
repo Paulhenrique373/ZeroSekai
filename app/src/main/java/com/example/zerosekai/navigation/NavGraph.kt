@@ -32,7 +32,7 @@ fun NavGraph() {
         }
 
         composable("create_post") {
-            CreatePostScreen()
+            CreatePostScreen(navController)
         }
 
         composable("profile") {
@@ -69,6 +69,15 @@ fun NavGraph() {
 
         composable("chat_list") {
             ChatListScreen(
+                onNavigate = { route ->
+                    navController.navigate(route) {
+                        launchSingleTop = true
+                        restoreState = true
+                        popUpTo("home") {
+                            saveState = true
+                        }
+                    }
+                },
                 onOpenChat = { chatId ->
                     navController.navigate("chat/$chatId")
                 }
@@ -80,7 +89,8 @@ fun NavGraph() {
             val chatId = backStackEntry.arguments?.getString("chatId") ?: ""
 
             ChatScreen(
-                chatId = chatId
+                chatId = chatId,
+                navController = navController
             )
         }
     }
