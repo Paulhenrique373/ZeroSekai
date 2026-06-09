@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -39,10 +40,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.zerosekai.data.model.Chat
 import com.example.zerosekai.data.model.User
 import com.example.zerosekai.ui.components.BottomBar
+import com.example.zerosekai.ui.components.ChatListLoadingSkeleton
 import com.example.zerosekai.ui.components.ZeroAvatar
 import com.example.zerosekai.ui.components.ZeroEmptyState
 import com.example.zerosekai.ui.components.ZeroSectionHeader
 import com.example.zerosekai.ui.components.ZeroScreenBackground
+import com.example.zerosekai.ui.components.ZeroShimmerBox
 import com.example.zerosekai.ui.components.ZeroTopBar
 import com.example.zerosekai.ui.theme.ZBorder
 import com.example.zerosekai.ui.theme.ZCard
@@ -53,6 +56,7 @@ import com.example.zerosekai.viewmodel.ChatListViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -64,6 +68,9 @@ fun ChatListScreen(
     onOpenChat: (String) -> Unit
 ) {
     val chats = viewModel.chats
+    var initialLoading by remember {
+        mutableStateOf(true)
+    }
 
     LaunchedEffect(Unit) {
         val uid = FirebaseAuth.getInstance().currentUser?.uid
@@ -71,6 +78,9 @@ fun ChatListScreen(
         if (!uid.isNullOrEmpty()) {
             viewModel.loadChats(uid)
         }
+
+        delay(700)
+        initialLoading = false
     }
 
     ZeroScreenBackground(
@@ -96,7 +106,16 @@ fun ChatListScreen(
                     subtitle = "Mensagens privadas em tempo real"
                 )
 
-                if (chats.isEmpty()) {
+                if (chats.isEmpty() && initialLoading) {
+                    ZeroSectionHeader(
+                        title = "Conversas",
+                        subtitle = "Sincronizando mensagens"
+                    )
+
+                    ChatListLoadingSkeleton(
+                        itemCount = 5
+                    )
+                } else if (chats.isEmpty()) {
                     ZeroEmptyState(
                         icon = Icons.Default.Chat,
                         title = "Nenhuma conversa ainda",
@@ -154,8 +173,14 @@ fun ChatItem(
         mutableStateOf<User?>(null)
     }
 
+    var userLoaded by remember {
+        mutableStateOf(false)
+    }
+
     LaunchedEffect(otherUserId) {
         if (otherUserId.isNotEmpty()) {
+            userLoaded = false
+
             val snapshot = firestore
                 .collection("users")
                 .document(otherUserId)
@@ -163,6 +188,9 @@ fun ChatItem(
                 .await()
 
             user = snapshot.toObject(User::class.java)
+            userLoaded = true
+        } else {
+            userLoaded = true
         }
     }
 
@@ -222,26 +250,44 @@ fun ChatItem(
             Column(
                 modifier = Modifier.weight(1f)
             ) {
-                Text(
-                    text = user?.username ?: "Carregando...",
-                    color = ZText,
-                    fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                if (!userLoaded) {
+                    ZeroShimmerBox(
+                        modifier = Modifier
+                            .fillMaxWidth(0.56f)
+                            .height(16.dp)
+                    )
 
-                Text(
-                    text = if (chat.lastMessage.isEmpty()) {
-                        "Sem mensagens ainda"
-                    } else {
-                        chat.lastMessage
-                    },
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = ZTextMuted
-                )
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    ZeroShimmerBox(
+                        modifier = Modifier
+                            .fillMaxWidth(0.86f)
+                            .height(12.dp)
+                    )
+                } else {
+                    Text(
+                        text = user?.username?.ifBlank {
+                            "Conversa"
+                        } ?: "Conversa",
+                        color = ZText,
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+
+                    Text(
+                        text = if (chat.lastMessage.isEmpty()) {
+                            "Sem mensagens ainda"
+                        } else {
+                            chat.lastMessage
+                        },
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = ZTextMuted
+                    )
+                }
             }
 
             if (time.isNotBlank()) {

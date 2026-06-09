@@ -1,6 +1,7 @@
 package com.example.zerosekai.ui.components
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -31,6 +32,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -69,6 +71,14 @@ fun PostCard(
     val likeTint by animateColorAsState(
         targetValue = if (isLiked) ZAccent else ZText,
         label = "postLikeTint"
+    )
+    val likeScale by animateFloatAsState(
+        targetValue = if (isLiked) {
+            1.16f
+        } else {
+            1f
+        },
+        label = "postLikeScale"
     )
 
     ZeroElevatedPanel(
@@ -154,7 +164,12 @@ fun PostCard(
                             },
                             contentDescription = "Curtir",
                             tint = likeTint,
-                            modifier = Modifier.size(28.dp)
+                            modifier = Modifier
+                                .size(28.dp)
+                                .graphicsLayer(
+                                    scaleX = likeScale,
+                                    scaleY = likeScale
+                                )
                         )
                     }
 

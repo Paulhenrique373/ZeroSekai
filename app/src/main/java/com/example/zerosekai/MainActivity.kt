@@ -6,6 +6,11 @@ import android.util.Patterns
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -70,6 +75,7 @@ import com.example.zerosekai.navigation.NavGraph
 import com.example.zerosekai.ui.theme.ZAccent
 import com.example.zerosekai.ui.theme.ZBackground
 import com.example.zerosekai.ui.theme.ZBorder
+import com.example.zerosekai.ui.theme.ZError
 import com.example.zerosekai.ui.theme.ZPrimary
 import com.example.zerosekai.ui.theme.ZSecondary
 import com.example.zerosekai.ui.theme.ZSurface
@@ -139,45 +145,67 @@ fun LoginScreen(
         mutableStateOf(false)
     }
 
+    var authMessage by remember {
+        mutableStateOf<String?>(null)
+    }
+
+    var authMessageIsError by remember {
+        mutableStateOf(true)
+    }
+
     val context = LocalContext.current
+
+    fun showAuthMessage(
+        message: String,
+        isError: Boolean
+    ) {
+        authMessage = message
+        authMessageIsError = isError
+
+        Toast.makeText(
+            context,
+            message,
+            if (isError) {
+                Toast.LENGTH_LONG
+            } else {
+                Toast.LENGTH_SHORT
+            }
+        ).show()
+    }
 
     fun submitAuth() {
         if (email.isBlank() || password.isBlank()) {
-            Toast.makeText(
-                context,
-                "Preencha todos os campos.",
-                Toast.LENGTH_LONG
-            ).show()
+            showAuthMessage(
+                message = "Preencha todos os campos.",
+                isError = true
+            )
 
             return
         }
 
         if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            Toast.makeText(
-                context,
-                "Email invalido.",
-                Toast.LENGTH_LONG
-            ).show()
+            showAuthMessage(
+                message = "Email invalido.",
+                isError = true
+            )
 
             return
         }
 
         if (!email.endsWith("@gmail.com")) {
-            Toast.makeText(
-                context,
-                "Use um email Gmail.",
-                Toast.LENGTH_LONG
-            ).show()
+            showAuthMessage(
+                message = "Use um email Gmail.",
+                isError = true
+            )
 
             return
         }
 
         if (password.length < 6) {
-            Toast.makeText(
-                context,
-                "A senha precisa ter pelo menos 6 caracteres.",
-                Toast.LENGTH_LONG
-            ).show()
+            showAuthMessage(
+                message = "A senha precisa ter pelo menos 6 caracteres.",
+                isError = true
+            )
 
             return
         }
@@ -188,11 +216,10 @@ fun LoginScreen(
                 password.trim()
             ).addOnCompleteListener {
                 if (it.isSuccessful) {
-                    Toast.makeText(
-                        context,
-                        "Login realizado!",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    showAuthMessage(
+                        message = "Login realizado!",
+                        isError = false
+                    )
 
                     isLoggedIn = true
                 } else {
@@ -220,11 +247,10 @@ fun LoginScreen(
                         }
                     }
 
-                    Toast.makeText(
-                        context,
-                        errorMessage,
-                        Toast.LENGTH_LONG
-                    ).show()
+                    showAuthMessage(
+                        message = errorMessage,
+                        isError = true
+                    )
                 }
             }
         } else {
@@ -233,11 +259,10 @@ fun LoginScreen(
                 password.trim()
             ).addOnCompleteListener {
                 if (it.isSuccessful) {
-                    Toast.makeText(
-                        context,
-                        "Conta criada!",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    showAuthMessage(
+                        message = "Conta criada!",
+                        isError = false
+                    )
 
                     isLoggedIn = true
                 } else {
@@ -265,11 +290,10 @@ fun LoginScreen(
                         }
                     }
 
-                    Toast.makeText(
-                        context,
-                        errorMessage,
-                        Toast.LENGTH_LONG
-                    ).show()
+                    showAuthMessage(
+                        message = errorMessage,
+                        isError = true
+                    )
                 }
             }
         }
@@ -361,7 +385,34 @@ fun LoginScreen(
                     textAlign = TextAlign.Center
                 )
 
-                Spacer(modifier = Modifier.height(32.dp))
+                AnimatedVisibility(
+                    visible = !authMessage.isNullOrBlank(),
+                    enter = fadeIn() + slideInVertically {
+                        -it / 2
+                    },
+                    exit = fadeOut() + slideOutVertically {
+                        -it / 2
+                    }
+                ) {
+                    AuthStatusMessage(
+                        message = authMessage.orEmpty(),
+                        isError = authMessageIsError,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .widthIn(max = 440.dp)
+                            .padding(top = 18.dp)
+                    )
+                }
+
+                Spacer(
+                    modifier = Modifier.height(
+                        if (authMessage.isNullOrBlank()) {
+                            32.dp
+                        } else {
+                            18.dp
+                        }
+                    )
+                )
 
                 Column(
                     modifier = Modifier
@@ -373,6 +424,7 @@ fun LoginScreen(
                         value = email,
                         onValueChange = {
                             email = it
+                            authMessage = null
                         },
                         placeholder = "Email",
                         leadingIcon = {
@@ -393,6 +445,7 @@ fun LoginScreen(
                         value = password,
                         onValueChange = {
                             password = it
+                            authMessage = null
                         },
                         placeholder = "Senha",
                         leadingIcon = {
@@ -477,6 +530,7 @@ fun LoginScreen(
                         isLogin = isLogin,
                         onToggleMode = {
                             isLogin = !isLogin
+                            authMessage = null
                         }
                     )
                 }
@@ -517,6 +571,43 @@ private fun LoginTextField(
         shape = RoundedCornerShape(24.dp),
         colors = loginTextFieldColors()
     )
+}
+
+@Composable
+private fun AuthStatusMessage(
+    message: String,
+    isError: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val accentColor =
+        if (isError) {
+            ZError
+        } else {
+            ZSecondary
+        }
+
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(18.dp),
+        color = ZSurface.copy(alpha = 0.72f),
+        border = BorderStroke(
+            width = 1.dp,
+            color = accentColor.copy(alpha = 0.72f)
+        ),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
+    ) {
+        Text(
+            text = message,
+            color = ZText,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(
+                horizontal = 16.dp,
+                vertical = 12.dp
+            )
+        )
+    }
 }
 
 @Composable

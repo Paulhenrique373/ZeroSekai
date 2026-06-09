@@ -1,9 +1,7 @@
 package com.example.zerosekai.ui.screens.home
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -13,7 +11,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Send
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -35,6 +32,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.zerosekai.data.model.Comment
 import com.example.zerosekai.ui.components.BottomBar
+import com.example.zerosekai.ui.components.FeedLoadingSkeleton
 import com.example.zerosekai.ui.components.PostCard
 import com.example.zerosekai.ui.components.ZeroEmptyState
 import com.example.zerosekai.ui.components.ZeroScreenBackground
@@ -134,16 +132,11 @@ fun HomeScreen(
 
                 if (posts.isEmpty() && loading) {
                     item {
-                        Box(
+                        FeedLoadingSkeleton(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .height(320.dp),
-                            contentAlignment = androidx.compose.ui.Alignment.Center
-                        ) {
-                            CircularProgressIndicator(
-                                color = ZText
-                            )
-                        }
+                                .padding(top = 4.dp),
+                            itemCount = 2
+                        )
                     }
                 } else if (posts.isEmpty()) {
                     item {

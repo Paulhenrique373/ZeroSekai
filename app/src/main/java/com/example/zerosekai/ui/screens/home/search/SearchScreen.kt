@@ -1,7 +1,6 @@
 package com.example.zerosekai.ui.screens.search
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -19,7 +18,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.PersonSearch
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -43,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.zerosekai.data.model.User
 import com.example.zerosekai.ui.components.BottomBar
+import com.example.zerosekai.ui.components.SearchLoadingSkeleton
 import com.example.zerosekai.ui.components.ZeroAvatar
 import com.example.zerosekai.ui.components.ZeroEmptyState
 import com.example.zerosekai.ui.components.ZeroSectionHeader
@@ -176,14 +175,15 @@ fun SearchScreen(
 
                 when {
                     loading -> {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator(
-                                color = ZText
-                            )
-                        }
+                        ZeroSectionHeader(
+                            title = "Buscando",
+                            subtitle = "Preparando resultados para voce"
+                        )
+
+                        SearchLoadingSkeleton(
+                            modifier = Modifier.padding(top = 4.dp),
+                            itemCount = 5
+                        )
                     }
 
                     searchText.isBlank() -> {

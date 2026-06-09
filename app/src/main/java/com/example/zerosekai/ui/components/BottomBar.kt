@@ -1,5 +1,6 @@
 package com.example.zerosekai.ui.components
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -19,10 +20,12 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import com.example.zerosekai.ui.theme.ZBorderSoft
 import com.example.zerosekai.ui.theme.ZCard
@@ -70,6 +73,14 @@ fun BottomBar(
             items.forEach { item ->
 
                 val selected = currentRoute == item.route
+                val iconScale by animateFloatAsState(
+                    targetValue = if (selected) {
+                        1.12f
+                    } else {
+                        1f
+                    },
+                    label = "bottomBarIconScale"
+                )
 
                 NavigationBarItem(
                     selected = selected,
@@ -81,7 +92,11 @@ fun BottomBar(
                     icon = {
                         Icon(
                             imageVector = item.icon,
-                            contentDescription = item.title
+                            contentDescription = item.title,
+                            modifier = Modifier.graphicsLayer(
+                                scaleX = iconScale,
+                                scaleY = iconScale
+                            )
                         )
                     },
                     label = {
