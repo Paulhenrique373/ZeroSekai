@@ -62,6 +62,23 @@ class ChatViewModel : ViewModel() {
         }
     }
 
+    fun reactToMessage(
+        chatId: String,
+        messageId: String,
+        userId: String,
+        reaction: String
+    ) {
+
+        viewModelScope.launch {
+            repository.reactToMessage(
+                chatId = chatId,
+                messageId = messageId,
+                userId = userId,
+                reaction = reaction
+            )
+        }
+    }
+
     override fun onCleared() {
         super.onCleared()
 

@@ -2,7 +2,11 @@ package com.example.zerosekai.ui.components
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,6 +19,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.ChatBubbleOutline
 import androidx.compose.material.icons.filled.Favorite
@@ -33,6 +38,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -44,9 +51,8 @@ import coil.compose.AsyncImage
 import com.example.zerosekai.data.model.Comment
 import com.example.zerosekai.data.model.Post
 import com.example.zerosekai.ui.theme.ZAccent
-import com.example.zerosekai.ui.theme.ZBorderSoft
-import com.example.zerosekai.ui.theme.ZCard
 import com.example.zerosekai.ui.theme.ZPrimary
+import com.example.zerosekai.ui.theme.ZSecondary
 import com.example.zerosekai.ui.theme.ZSurface
 import com.example.zerosekai.ui.theme.ZText
 import com.example.zerosekai.ui.theme.ZTextMuted
@@ -54,6 +60,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PostCard(
     post: Post,
@@ -65,6 +72,9 @@ fun PostCard(
     onPostClick: () -> Unit,
     onToggleLike: () -> Unit,
     onSubmitComment: () -> Unit,
+    onSharePost: () -> Unit,
+    isSaved: Boolean,
+    onToggleSaved: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val isLiked = post.likes.contains(currentUid)
@@ -91,12 +101,20 @@ fun PostCard(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 13.dp),
+                    .background(
+                        androidx.compose.ui.graphics.Brush.linearGradient(
+                            colors = listOf(
+                                ZPrimary.copy(alpha = 0.14f),
+                                Color.Transparent
+                            )
+                        )
+                    )
+                    .padding(horizontal = 16.dp, vertical = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 ZeroAvatar(
                     photoUrl = post.userPhoto,
-                    size = 46.dp,
+                    size = 62.dp,
                     label = post.userName,
                     modifier = Modifier.clickable(onClick = onUserClick)
                 )
@@ -118,7 +136,7 @@ fun PostCard(
                     )
 
                     Text(
-                        text = formatPostTimestamp(post.timestamp),
+                        text = "${formatPostTimestamp(post.timestamp)}  •  Dark anime",
                         color = ZTextMuted,
                         style = MaterialTheme.typography.labelSmall
                     )
@@ -136,17 +154,23 @@ fun PostCard(
                 contentDescription = post.caption,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 10.dp)
+                    .padding(horizontal = 14.dp)
                     .aspectRatio(4f / 5f)
                     .clip(RoundedCornerShape(18.dp))
-                    .clickable(onClick = onPostClick),
+                    .combinedClickable(
+                        onClick = onPostClick,
+                        onDoubleClick = onToggleLike
+                    ),
                 contentScale = ContentScale.Crop
             )
 
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                    .padding(horizontal = 14.dp, vertical = 12.dp)
+                    .clip(RoundedCornerShape(22.dp))
+                    .background(ZSurface.copy(alpha = 0.42f))
+                    .padding(horizontal = 6.dp, vertical = 3.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -156,40 +180,31 @@ fun PostCard(
                     IconButton(
                         onClick = onToggleLike
                     ) {
-                        Icon(
-                            imageVector = if (isLiked) {
-                                Icons.Default.Favorite
-                            } else {
-                                Icons.Default.FavoriteBorder
-                            },
-                            contentDescription = "Curtir",
+                        ActionIconWithCount(
+                            icon = if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                            count = post.likes.size.toString(),
                             tint = likeTint,
-                            modifier = Modifier
-                                .size(28.dp)
-                                .graphicsLayer(
-                                    scaleX = likeScale,
-                                    scaleY = likeScale
-                                )
+                            scale = likeScale
                         )
                     }
 
                     IconButton(
                         onClick = onPostClick
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.ChatBubbleOutline,
-                            contentDescription = "Comentarios",
+                        ActionIconWithCount(
+                            icon = Icons.Default.ChatBubbleOutline,
+                            count = comments.size.toString(),
                             tint = ZText,
-                            modifier = Modifier.size(26.dp)
+                            scale = 1f
                         )
                     }
 
                     IconButton(
-                        onClick = { }
+                        onClick = onSharePost
                     ) {
                         Icon(
                             imageVector = Icons.Default.Send,
-                            contentDescription = null,
+                            contentDescription = "Compartilhar",
                             tint = ZText,
                             modifier = Modifier.size(25.dp)
                         )
@@ -197,19 +212,23 @@ fun PostCard(
                 }
 
                 IconButton(
-                    onClick = { }
+                    onClick = onToggleSaved
                 ) {
                     Icon(
-                        imageVector = Icons.Default.BookmarkBorder,
-                        contentDescription = null,
-                        tint = ZText,
+                        imageVector = if (isSaved) {
+                            Icons.Default.Bookmark
+                        } else {
+                            Icons.Default.BookmarkBorder
+                        },
+                        contentDescription = "Salvar post",
+                        tint = if (isSaved) ZSecondary else ZText,
                         modifier = Modifier.size(26.dp)
                     )
                 }
             }
 
             Column(
-                modifier = Modifier.padding(horizontal = 14.dp)
+                modifier = Modifier.padding(horizontal = 16.dp)
             ) {
                 Text(
                     text = "${post.likes.size} curtidas",
@@ -315,6 +334,38 @@ fun PostCard(
                 Spacer(modifier = Modifier.height(14.dp))
             }
         }
+    }
+}
+
+@Composable
+private fun ActionIconWithCount(
+    icon: ImageVector,
+    count: String,
+    tint: Color,
+    scale: Float
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(5.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = tint,
+            modifier = Modifier
+                .size(27.dp)
+                .graphicsLayer(
+                    scaleX = scale,
+                    scaleY = scale
+                )
+        )
+
+        Text(
+            text = count,
+            color = ZTextMuted,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold
+        )
     }
 }
 

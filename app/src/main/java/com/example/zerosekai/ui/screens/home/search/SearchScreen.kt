@@ -1,6 +1,7 @@
 package com.example.zerosekai.ui.screens.search
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -16,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.PersonSearch
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
@@ -39,6 +41,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.example.zerosekai.R
 import com.example.zerosekai.data.model.User
 import com.example.zerosekai.ui.components.BottomBar
 import com.example.zerosekai.ui.components.SearchLoadingSkeleton
@@ -48,8 +51,10 @@ import com.example.zerosekai.ui.components.ZeroSectionHeader
 import com.example.zerosekai.ui.components.ZeroScreenBackground
 import com.example.zerosekai.ui.components.ZeroTopBar
 import com.example.zerosekai.ui.components.zeroTextFieldColors
+import com.example.zerosekai.ui.theme.ZAccent
 import com.example.zerosekai.ui.theme.ZBorder
 import com.example.zerosekai.ui.theme.ZCard
+import com.example.zerosekai.ui.theme.ZPrimary
 import com.example.zerosekai.ui.theme.ZText
 import com.example.zerosekai.ui.theme.ZTextMuted
 import com.google.firebase.firestore.FirebaseFirestore
@@ -104,7 +109,8 @@ fun SearchScreen(
     }
 
     ZeroScreenBackground(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize(),
+        backgroundRes = R.drawable.bg_search
     ) {
         Scaffold(
             containerColor = Color.Transparent,
@@ -131,7 +137,24 @@ fun SearchScreen(
             ) {
                 ZeroTopBar(
                     title = "Buscar",
-                    subtitle = "Encontre perfis e novas conexoes"
+                    subtitle = "Encontre perfis e novas conexões",
+                    actions = {
+                        Surface(
+                            color = ZCard.copy(alpha = 0.58f),
+                            shape = RoundedCornerShape(18.dp),
+                            border = BorderStroke(1.dp, ZAccent.copy(alpha = 0.78f))
+                        ) {
+                            IconButton(
+                                onClick = {}
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.PersonAdd,
+                                    contentDescription = null,
+                                    tint = ZText
+                                )
+                            }
+                        }
+                    }
                 )
 
                 OutlinedTextField(
@@ -167,7 +190,7 @@ fun SearchScreen(
                         imeAction = ImeAction.Search
                     ),
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(18.dp),
+                    shape = RoundedCornerShape(24.dp),
                     colors = zeroTextFieldColors()
                 )
 
@@ -289,6 +312,19 @@ private fun UserItem(
                     style = MaterialTheme.typography.bodyMedium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            Surface(
+                color = ZPrimary.copy(alpha = 0.18f),
+                shape = RoundedCornerShape(14.dp),
+                border = BorderStroke(1.dp, ZAccent.copy(alpha = 0.72f))
+            ) {
+                Icon(
+                    imageVector = Icons.Default.PersonAdd,
+                    contentDescription = null,
+                    tint = ZAccent,
+                    modifier = Modifier.padding(10.dp)
                 )
             }
         }

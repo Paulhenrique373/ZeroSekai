@@ -11,6 +11,8 @@ class ChatRepository {
 
     private val firestore = FirebaseFirestore.getInstance()
 
+    private val notificationRepository = NotificationRepository()
+
     private var chatsListener: ListenerRegistration? = null
     private val messagesListeners = mutableMapOf<String, ListenerRegistration>()
 
@@ -72,6 +74,57 @@ class ChatRepository {
                     "lastMessage" to text,
                     "lastTimestamp" to now
                 )
+            )
+            .await()
+
+        val chat =
+            firestore
+                .collection("chats")
+                .document(chatId)
+                .get()
+                .await()
+                .toObject(Chat::class.java)
+
+        val recipientId =
+            chat
+                ?.participants
+                ?.firstOrNull {
+                    it != senderId
+                }
+                .orEmpty()
+
+        notificationRepository.createNotification(
+            recipientId = recipientId,
+            type = "message",
+            message = text.trim().take(80),
+            chatId = chatId
+        )
+    }
+
+    suspend fun reactToMessage(
+        chatId: String,
+        messageId: String,
+        userId: String,
+        reaction: String
+    ) {
+
+        if (
+            chatId.isBlank() ||
+            messageId.isBlank() ||
+            userId.isBlank() ||
+            reaction.isBlank()
+        ) {
+            return
+        }
+
+        firestore
+            .collection("chats")
+            .document(chatId)
+            .collection("messages")
+            .document(messageId)
+            .update(
+                "reactions.$userId",
+                reaction
             )
             .await()
     }

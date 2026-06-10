@@ -20,10 +20,15 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.GridOn
+import androidx.compose.material.icons.filled.Verified
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -39,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
+import com.example.zerosekai.R
 import com.example.zerosekai.data.model.Post
 import com.example.zerosekai.ui.components.BottomBar
 import com.example.zerosekai.ui.components.ZeroAvatar
@@ -47,10 +53,14 @@ import com.example.zerosekai.ui.components.ZeroEmptyState
 import com.example.zerosekai.ui.components.ZeroGradientButton
 import com.example.zerosekai.ui.components.ZeroSectionHeader
 import com.example.zerosekai.ui.components.ZeroScreenBackground
+import com.example.zerosekai.ui.components.ZeroSoftButton
 import com.example.zerosekai.ui.components.ZeroStatBlock
 import com.example.zerosekai.ui.components.ZeroSubtleGradient
 import com.example.zerosekai.ui.components.ZeroTopBar
+import com.example.zerosekai.ui.theme.ZAccent
 import com.example.zerosekai.ui.theme.ZBorderSoft
+import com.example.zerosekai.ui.theme.ZPrimary
+import com.example.zerosekai.ui.theme.ZSecondary
 import com.example.zerosekai.ui.theme.ZSurfaceElevated
 import com.example.zerosekai.ui.theme.ZText
 import com.example.zerosekai.ui.theme.ZTextMuted
@@ -85,7 +95,8 @@ fun ProfileScreen(
         user?.username?.ifBlank { "Zero User" } ?: "Zero User"
 
     ZeroScreenBackground(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize(),
+        backgroundRes = R.drawable.bg_profile
     ) {
         Scaffold(
             containerColor = Color.Transparent,
@@ -144,6 +155,9 @@ fun ProfileScreen(
                         followingCount = user?.following?.size ?: 0,
                         onEditClick = {
                             navController.navigate("edit_profile")
+                        },
+                        onSavedClick = {
+                            navController.navigate("saved_posts")
                         }
                     )
                 }
@@ -202,7 +216,8 @@ private fun ProfileHeaderCard(
     likesCount: Int,
     followersCount: Int,
     followingCount: Int,
-    onEditClick: () -> Unit
+    onEditClick: () -> Unit,
+    onSavedClick: () -> Unit
 ) {
     ZeroElevatedPanel(
         modifier = Modifier.fillMaxWidth(),
@@ -239,6 +254,25 @@ private fun ProfileHeaderCard(
                         textAlign = TextAlign.Center
                     )
 
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        ProfileBadge(
+                            text = "Verificado",
+                            icon = Icons.Default.Verified,
+                            tint = ZSecondary
+                        )
+
+                        ProfileBadge(
+                            text = "Nivel 7",
+                            icon = Icons.Default.EmojiEvents,
+                            tint = ZAccent
+                        )
+                    }
+
                     if (email.isNotBlank()) {
                         Spacer(modifier = Modifier.height(3.dp))
 
@@ -260,6 +294,13 @@ private fun ProfileHeaderCard(
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(0.92f)
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            ProfileXpBar(
+                currentXp = 740,
+                nextLevelXp = 1000
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -299,11 +340,116 @@ private fun ProfileHeaderCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            ZeroGradientButton(
-                text = "Editar perfil",
-                onClick = onEditClick,
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                leadingIcon = Icons.Default.Edit
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                ZeroGradientButton(
+                    text = "Editar perfil",
+                    onClick = onEditClick,
+                    modifier = Modifier.weight(1f),
+                    leadingIcon = Icons.Default.Edit
+                )
+
+                ZeroSoftButton(
+                    text = "Salvos",
+                    onClick = onSavedClick,
+                    modifier = Modifier.weight(1f),
+                    leadingIcon = Icons.Default.Bookmark
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProfileBadge(
+    text: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    tint: Color
+) {
+    Surface(
+        color = tint.copy(alpha = 0.14f),
+        shape = RoundedCornerShape(999.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(
+                horizontal = 10.dp,
+                vertical = 6.dp
+            ),
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = tint,
+                modifier = Modifier.height(14.dp)
+            )
+
+            Text(
+                text = text,
+                color = ZText,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
+@Composable
+private fun ProfileXpBar(
+    currentXp: Int,
+    nextLevelXp: Int
+) {
+    val progress =
+        (currentXp.toFloat() / nextLevelXp.toFloat()).coerceIn(0f, 1f)
+
+    Column(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = "XP da semana",
+                color = ZText,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold
+            )
+
+            Text(
+                text = "$currentXp/$nextLevelXp",
+                color = ZTextMuted,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(10.dp)
+                .clip(RoundedCornerShape(999.dp))
+                .background(ZSurfaceElevated)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(progress)
+                    .height(10.dp)
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(
+                        androidx.compose.ui.graphics.Brush.linearGradient(
+                            colors = listOf(
+                                ZPrimary,
+                                ZAccent,
+                                ZSecondary
+                            )
+                        )
+                    )
             )
         }
     }

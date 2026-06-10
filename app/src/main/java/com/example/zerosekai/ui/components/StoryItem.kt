@@ -2,6 +2,7 @@ package com.example.zerosekai.ui.components
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -29,42 +30,54 @@ import com.example.zerosekai.ui.theme.ZText
 @Composable
 fun StoryItem(
     name: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    photoUrl: String? = null,
+    onClick: () -> Unit = {}
 ) {
     Column(
-        modifier = modifier,
+        modifier = modifier
+            .width(82.dp)
+            .clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        androidx.compose.foundation.layout.Box(
-            modifier = Modifier
-                .size(74.dp)
-                .clip(CircleShape)
-                .background(
-                    Brush.linearGradient(
-                        colors = listOf(
-                            ZAccent,
-                            ZPrimary,
-                            ZSecondary
-                        )
-                    )
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.logo),
-                contentDescription = null,
-                modifier = Modifier
-                    .size(68.dp)
-                    .clip(CircleShape),
-                contentScale = ContentScale.Crop
+        if (!photoUrl.isNullOrBlank()) {
+            ZeroAvatar(
+                photoUrl = photoUrl,
+                size = 74.dp,
+                label = name
             )
+        } else {
+            androidx.compose.foundation.layout.Box(
+                modifier = Modifier
+                    .size(74.dp)
+                    .clip(CircleShape)
+                    .background(
+                        Brush.linearGradient(
+                            colors = listOf(
+                                ZAccent,
+                                ZPrimary,
+                                ZSecondary
+                            )
+                        )
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.logo),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(68.dp)
+                        .clip(CircleShape),
+                    contentScale = ContentScale.Crop
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(7.dp))
 
         Text(
             text = name,
-            modifier = Modifier.width(74.dp),
+            modifier = Modifier.width(82.dp),
             color = ZText,
             fontSize = 12.sp,
             fontWeight = FontWeight.Medium,

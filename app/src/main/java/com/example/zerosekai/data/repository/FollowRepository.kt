@@ -10,6 +10,8 @@ class FollowRepository {
 
     private val firestore = FirebaseFirestore.getInstance()
 
+    private val notificationRepository = NotificationRepository()
+
     suspend fun toggleFollow(
         targetUserId: String
     ) {
@@ -35,6 +37,8 @@ class FollowRepository {
                 firestore
                     .collection("users")
                     .document(targetUserId)
+
+            var shouldNotifyFollow = false
 
             firestore.runTransaction { transaction ->
 
@@ -75,6 +79,8 @@ class FollowRepository {
 
                 } else {
 
+                    shouldNotifyFollow = true
+
                     transaction.update(
                         currentUserRef,
                         "following",
@@ -89,6 +95,15 @@ class FollowRepository {
                 }
 
             }.await()
+
+            if (shouldNotifyFollow) {
+                notificationRepository.createNotification(
+                    recipientId = targetUserId,
+                    type = "follow",
+                    message = "comecou a seguir voce",
+                    stableId = "follow_${targetUserId}_$currentUid"
+                )
+            }
 
         } catch (e: Exception) {
 

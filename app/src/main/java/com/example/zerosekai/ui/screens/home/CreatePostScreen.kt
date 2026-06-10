@@ -52,6 +52,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
 import com.example.zerosekai.ui.components.BottomBar
+import com.example.zerosekai.R
 import com.example.zerosekai.ui.components.ZeroElevatedPanel
 import com.example.zerosekai.ui.components.ZeroGradientButton
 import com.example.zerosekai.ui.components.ZeroScreenBackground
@@ -89,7 +90,8 @@ fun CreatePostScreen(
     }
 
     ZeroScreenBackground(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize(),
+        backgroundRes = R.drawable.bg_create_post
     ) {
         Scaffold(
             containerColor = Color.Transparent,
@@ -122,7 +124,10 @@ fun CreatePostScreen(
                 ) {
                     ZeroTopBar(
                         title = "Criar post",
-                        subtitle = "Publique um momento no ZeroSekai"
+                        subtitle = "Publique um momento no ZeroSekai",
+                        onBackClick = {
+                            navController.popBackStack()
+                        }
                     )
 
                     ZeroElevatedPanel(
@@ -154,7 +159,9 @@ fun CreatePostScreen(
                     OutlinedTextField(
                         value = caption,
                         onValueChange = { newText ->
-                            caption = newText
+                            if (newText.length <= 300) {
+                                caption = newText
+                            }
                         },
                         label = {
                             Text("Legenda")
@@ -166,6 +173,14 @@ fun CreatePostScreen(
                             Icon(
                                 imageVector = Icons.Default.Image,
                                 contentDescription = null
+                            )
+                        },
+                        trailingIcon = {
+                            Text(
+                                text = "${caption.length}/300",
+                                color = ZTextMuted,
+                                style = MaterialTheme.typography.labelMedium,
+                                modifier = Modifier.padding(end = 8.dp)
                             )
                         },
                         modifier = Modifier.fillMaxWidth(),

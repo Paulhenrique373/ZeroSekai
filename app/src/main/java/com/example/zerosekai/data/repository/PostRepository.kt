@@ -24,6 +24,8 @@ class PostRepository {
 
     private val firestore = FirebaseFirestore.getInstance()
 
+    private val notificationRepository = NotificationRepository()
+
     suspend fun uploadPost(
         context: Context,
         imageUri: Uri,
@@ -189,25 +191,40 @@ class PostRepository {
                 .collection("posts")
                 .document(postId)
 
+        var shouldNotify = false
+        var recipientId = ""
+
         firestore.runTransaction { transaction ->
 
             val snapshot =
                 transaction.get(postRef)
+
+            recipientId =
+                snapshot.getString("userId")
+                    ?: ""
 
             val postLikes =
                 snapshot.get("likes")
                         as? List<String>
                     ?: emptyList()
 
+            val isLiking =
+                !postLikes.contains(uid)
+
+            shouldNotify =
+                isLiking &&
+                    recipientId.isNotBlank() &&
+                    recipientId != uid
+
             val updatedLikes =
 
-                if (postLikes.contains(uid)) {
+                if (isLiking) {
 
-                    postLikes - uid
+                    postLikes + uid
 
                 } else {
 
-                    postLikes + uid
+                    postLikes - uid
                 }
 
             transaction.update(
@@ -217,6 +234,16 @@ class PostRepository {
             )
 
         }.await()
+
+        if (shouldNotify) {
+            notificationRepository.createNotification(
+                recipientId = recipientId,
+                type = "like",
+                message = "curtiu seu post",
+                postId = postId,
+                stableId = "like_${postId}_$uid"
+            )
+        }
     }
 
     // ADICIONAR COMENTÁRIO
@@ -225,11 +252,26 @@ class PostRepository {
         text: String
     ) {
 
+        if (text.isBlank()) {
+            return
+        }
+
         val currentUser =
             auth.currentUser ?: return
 
         val uid =
             currentUser.uid
+
+        val postSnapshot =
+            firestore
+                .collection("posts")
+                .document(postId)
+                .get()
+                .await()
+
+        val recipientId =
+            postSnapshot.getString("userId")
+                ?: ""
 
         val userDoc =
             firestore
@@ -279,6 +321,13 @@ class PostRepository {
             .document(commentId)
             .set(comment)
             .await()
+
+        notificationRepository.createNotification(
+            recipientId = recipientId,
+            type = "comment",
+            message = "comentou: ${text.trim().take(80)}",
+            postId = postId
+        )
     }
 
     // PEGAR COMENTÁRIOS

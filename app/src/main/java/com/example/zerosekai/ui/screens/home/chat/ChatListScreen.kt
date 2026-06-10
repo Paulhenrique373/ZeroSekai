@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddComment
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -37,6 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.zerosekai.R
 import com.example.zerosekai.data.model.Chat
 import com.example.zerosekai.data.model.User
 import com.example.zerosekai.ui.components.BottomBar
@@ -49,6 +51,8 @@ import com.example.zerosekai.ui.components.ZeroShimmerBox
 import com.example.zerosekai.ui.components.ZeroTopBar
 import com.example.zerosekai.ui.theme.ZBorder
 import com.example.zerosekai.ui.theme.ZCard
+import com.example.zerosekai.ui.theme.ZAccent
+import com.example.zerosekai.ui.theme.ZPrimary
 import com.example.zerosekai.ui.theme.ZSuccess
 import com.example.zerosekai.ui.theme.ZText
 import com.example.zerosekai.ui.theme.ZTextMuted
@@ -84,10 +88,34 @@ fun ChatListScreen(
     }
 
     ZeroScreenBackground(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize(),
+        backgroundRes = R.drawable.bg_chat
     ) {
         Scaffold(
             containerColor = Color.Transparent,
+            floatingActionButton = {
+                Surface(
+                    modifier = Modifier
+                        .padding(bottom = 92.dp)
+                        .size(64.dp)
+                        .clickable {
+                            onNavigate("search")
+                        },
+                    color = ZPrimary.copy(alpha = 0.82f),
+                    shape = RoundedCornerShape(999.dp),
+                    border = BorderStroke(1.dp, ZAccent.copy(alpha = 0.82f))
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center
+                    ) {
+                        androidx.compose.material3.Icon(
+                            imageVector = Icons.Default.AddComment,
+                            contentDescription = "Nova conversa",
+                            tint = ZText
+                        )
+                    }
+                }
+            },
             bottomBar = {
                 BottomBar(
                     currentRoute = "chat_list",
@@ -212,10 +240,10 @@ fun ChatItem(
             .fillMaxWidth()
             .padding(vertical = 6.dp)
             .clickable(onClick = onClick),
-        color = ZCard.copy(alpha = 0.92f),
+        color = ZCard.copy(alpha = 0.68f),
         shape = RoundedCornerShape(20.dp),
         tonalElevation = 3.dp,
-        border = BorderStroke(1.dp, ZBorder)
+        border = BorderStroke(1.dp, ZAccent.copy(alpha = 0.72f))
     ) {
         Row(
             modifier = Modifier

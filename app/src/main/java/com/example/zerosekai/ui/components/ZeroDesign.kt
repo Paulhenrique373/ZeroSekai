@@ -1,5 +1,10 @@
 package com.example.zerosekai.ui.components
 
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -9,6 +14,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -36,12 +42,14 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.example.zerosekai.R
 import com.example.zerosekai.ui.theme.ZAccent
 import com.example.zerosekai.ui.theme.ZBackground
 import com.example.zerosekai.ui.theme.ZBackgroundSoft
@@ -60,31 +68,100 @@ import com.example.zerosekai.ui.theme.ZTextMuted
 @Composable
 fun ZeroScreenBackground(
     modifier: Modifier = Modifier,
+    backgroundRes: Int? = null,
     content: @Composable () -> Unit
 ) {
     Box(
         modifier = modifier
-            .background(
-                Brush.linearGradient(
-                    colors = listOf(
-                        ZBackground,
-                        ZPrimary.copy(alpha = 0.18f),
-                        ZBackgroundSoft,
-                        ZSecondary.copy(alpha = 0.10f),
-                        ZBackground
+    ) {
+        if (backgroundRes != null) {
+            androidx.compose.foundation.Image(
+                painter = painterResource(id = backgroundRes),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.linearGradient(
+                        colors = listOf(
+                            ZBackground.copy(alpha = if (backgroundRes != null) 0.44f else 1f),
+                            ZPrimary.copy(alpha = if (backgroundRes != null) 0.18f else 0.18f),
+                            ZBackgroundSoft.copy(alpha = if (backgroundRes != null) 0.54f else 1f),
+                            ZSecondary.copy(alpha = 0.12f),
+                            ZBackground.copy(alpha = 0.96f)
+                        )
                     )
                 )
-            )
-    ) {
+        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.radialGradient(
+                        colors = listOf(
+                            ZAccent.copy(alpha = 0.18f),
+                            Color.Transparent,
+                            ZBackground.copy(alpha = 0.42f)
+                        )
+                    )
+                )
+        )
+
         content()
     }
 }
 
+@Composable
+fun ZeroBackgroundForRoute(
+    route: String?,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    val background =
+        when (route) {
+            "home" -> R.drawable.bg_home
+            "search" -> R.drawable.bg_search
+            "create_post" -> R.drawable.bg_create_post
+            "chat_list",
+            "chat" -> R.drawable.bg_chat
+            "profile" -> R.drawable.bg_profile
+            else -> null
+        }
+
+    ZeroScreenBackground(
+        modifier = modifier,
+        backgroundRes = background,
+        content = content
+    )
+}
+
 val ZeroPrimaryGradient = Brush.linearGradient(
     colors = listOf(
-        ZPrimary,
+        Color(0xFF8A35FF),
         ZAccent,
-        ZSecondary
+        Color(0xFF20D9FF)
+    )
+)
+
+val ZeroPinkGradient = Brush.linearGradient(
+    colors = listOf(
+        Color(0xFF8A35FF),
+        Color(0xFFE534FF),
+        Color(0xFFFF3FA4)
+    )
+)
+
+val ZeroNeonBorderBrush = Brush.linearGradient(
+    colors = listOf(
+        Color(0xFFFF3FA4),
+        Color(0xFF8A35FF),
+        Color(0xFF22D4FF)
     )
 )
 
@@ -106,13 +183,14 @@ fun ZeroGlassCard(
     Surface(
         modifier = modifier,
         shape = shape,
-        color = ZGlass,
+        color = ZGlass.copy(alpha = 0.76f),
         border = BorderStroke(
             width = 1.dp,
             brush = Brush.linearGradient(
                 colors = listOf(
-                    ZGlassStrong,
-                    ZBorder.copy(alpha = 0.7f)
+                    ZAccent.copy(alpha = 0.78f),
+                    ZPrimary.copy(alpha = 0.54f),
+                    ZSecondary.copy(alpha = 0.78f)
                 )
             )
         ),
@@ -135,9 +213,9 @@ fun ZeroElevatedPanel(
 ) {
     ElevatedCard(
         modifier = modifier,
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.elevatedCardColors(
-            containerColor = ZCard.copy(alpha = 0.94f)
+            containerColor = ZCard.copy(alpha = 0.78f)
         ),
         elevation = CardDefaults.elevatedCardElevation(
             defaultElevation = 4.dp
@@ -160,6 +238,24 @@ fun ZeroAvatar(
     showRing: Boolean = true
 ) {
     val innerSize = (size.value - if (showRing) 4f else 0f).coerceAtLeast(1f).dp
+    val transition =
+        rememberInfiniteTransition(
+            label = "zeroAvatarRing"
+        )
+    val ringPulse =
+        if (showRing) {
+            transition.animateFloat(
+                initialValue = 0.70f,
+                targetValue = 1f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(1400),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "zeroAvatarRingPulse"
+            ).value
+        } else {
+            1f
+        }
 
     Box(
         modifier = modifier
@@ -169,9 +265,9 @@ fun ZeroAvatar(
                 if (showRing) {
                     Brush.linearGradient(
                         colors = listOf(
-                            ZAccent,
+                            ZAccent.copy(alpha = ringPulse),
                             ZPrimary,
-                            ZSecondary
+                            ZSecondary.copy(alpha = ringPulse)
                         )
                     )
                 } else {
@@ -324,15 +420,15 @@ fun zeroTextFieldColors(): TextFieldColors =
         unfocusedLabelColor = ZTextMuted,
         focusedPlaceholderColor = ZTextMuted,
         unfocusedPlaceholderColor = ZTextMuted,
-        focusedLeadingIconColor = ZPrimary,
-        unfocusedLeadingIconColor = ZTextMuted,
+        focusedLeadingIconColor = ZAccent,
+        unfocusedLeadingIconColor = ZAccent.copy(alpha = 0.78f),
         focusedTrailingIconColor = ZText,
         unfocusedTrailingIconColor = ZTextMuted,
-        cursorColor = ZPrimary,
-        focusedBorderColor = ZPrimary,
-        unfocusedBorderColor = ZBorder,
-        focusedContainerColor = ZSurface.copy(alpha = 0.76f),
-        unfocusedContainerColor = ZSurface.copy(alpha = 0.58f)
+        cursorColor = ZAccent,
+        focusedBorderColor = ZAccent,
+        unfocusedBorderColor = ZPrimary.copy(alpha = 0.56f),
+        focusedContainerColor = ZSurface.copy(alpha = 0.54f),
+        unfocusedContainerColor = ZSurface.copy(alpha = 0.42f)
     )
 
 @Composable

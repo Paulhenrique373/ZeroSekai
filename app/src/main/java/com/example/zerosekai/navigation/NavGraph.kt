@@ -7,7 +7,9 @@ import androidx.navigation.compose.rememberNavController
 
 import com.example.zerosekai.ui.screens.home.CreatePostScreen
 import com.example.zerosekai.ui.screens.home.HomeScreen
+import com.example.zerosekai.ui.screens.home.NotificationsScreen
 import com.example.zerosekai.ui.screens.home.PostDetailScreen
+import com.example.zerosekai.ui.screens.home.SavedPostsScreen
 import com.example.zerosekai.ui.screens.home.ChatScreen
 import com.example.zerosekai.ui.screens.home.ChatListScreen
 
@@ -47,6 +49,14 @@ fun NavGraph() {
             SearchScreen(navController)
         }
 
+        composable("notifications") {
+            NotificationsScreen(navController)
+        }
+
+        composable("saved_posts") {
+            SavedPostsScreen(navController)
+        }
+
         composable("post_detail/{postId}") { backStackEntry ->
 
             val postId = backStackEntry.arguments?.getString("postId") ?: ""
@@ -70,11 +80,20 @@ fun NavGraph() {
         composable("chat_list") {
             ChatListScreen(
                 onNavigate = { route ->
-                    navController.navigate(route) {
-                        launchSingleTop = true
-                        restoreState = true
-                        popUpTo("home") {
-                            saveState = true
+                    if (route == "home") {
+                        navController.navigate("home") {
+                            launchSingleTop = true
+                            popUpTo("home") {
+                                inclusive = false
+                            }
+                        }
+                    } else {
+                        navController.navigate(route) {
+                            launchSingleTop = true
+                            restoreState = true
+                            popUpTo("home") {
+                                saveState = true
+                            }
                         }
                     }
                 },
