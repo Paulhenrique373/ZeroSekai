@@ -18,6 +18,7 @@ import com.example.zerosekai.ui.screens.profile.ProfileScreen
 import com.example.zerosekai.ui.screens.profile.UserProfileScreen
 
 import com.example.zerosekai.ui.screens.search.SearchScreen
+import com.example.zerosekai.ui.components.navigateBottomBarRoute
 
 @Composable
 fun NavGraph() {
@@ -80,22 +81,7 @@ fun NavGraph() {
         composable("chat_list") {
             ChatListScreen(
                 onNavigate = { route ->
-                    if (route == "home") {
-                        navController.navigate("home") {
-                            launchSingleTop = true
-                            popUpTo("home") {
-                                inclusive = false
-                            }
-                        }
-                    } else {
-                        navController.navigate(route) {
-                            launchSingleTop = true
-                            restoreState = true
-                            popUpTo("home") {
-                                saveState = true
-                            }
-                        }
-                    }
+                    navController.navigateBottomBarRoute(route)
                 },
                 onOpenChat = { chatId ->
                     navController.navigate("chat/$chatId")

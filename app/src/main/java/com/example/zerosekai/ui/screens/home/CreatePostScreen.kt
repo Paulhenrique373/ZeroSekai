@@ -58,6 +58,7 @@ import com.example.zerosekai.ui.components.ZeroGradientButton
 import com.example.zerosekai.ui.components.ZeroScreenBackground
 import com.example.zerosekai.ui.components.ZeroTopBar
 import com.example.zerosekai.ui.components.zeroTextFieldColors
+import com.example.zerosekai.ui.components.navigateBottomBarRoute
 import com.example.zerosekai.ui.theme.ZBorder
 import com.example.zerosekai.ui.theme.ZBorderSoft
 import com.example.zerosekai.ui.theme.ZPrimary
@@ -99,13 +100,7 @@ fun CreatePostScreen(
                 BottomBar(
                     currentRoute = "create_post",
                     onNavigate = { route ->
-                        navController.navigate(route) {
-                            launchSingleTop = true
-                            restoreState = true
-                            popUpTo("home") {
-                                saveState = true
-                            }
-                        }
+                        navController.navigateBottomBarRoute(route)
                     }
                 )
             }

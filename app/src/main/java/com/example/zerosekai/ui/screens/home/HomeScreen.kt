@@ -61,6 +61,7 @@ import com.example.zerosekai.ui.components.ZeroGlassCard
 import com.example.zerosekai.ui.components.ZeroScreenBackground
 import com.example.zerosekai.ui.components.ZeroTopBar
 import com.example.zerosekai.ui.components.ZeroPinkGradient
+import com.example.zerosekai.ui.components.navigateBottomBarRoute
 import com.example.zerosekai.ui.theme.ZAccent
 import com.example.zerosekai.ui.theme.ZPrimary
 import com.example.zerosekai.ui.theme.ZSecondary
@@ -148,13 +149,7 @@ fun HomeScreen(
                 BottomBar(
                     currentRoute = "home",
                     onNavigate = { route ->
-                        navController.navigate(route) {
-                            launchSingleTop = true
-                            restoreState = true
-                            popUpTo("home") {
-                                saveState = true
-                            }
-                        }
+                        navController.navigateBottomBarRoute(route)
                     }
                 )
             }

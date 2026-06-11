@@ -57,6 +57,7 @@ import com.example.zerosekai.ui.components.ZeroSoftButton
 import com.example.zerosekai.ui.components.ZeroStatBlock
 import com.example.zerosekai.ui.components.ZeroSubtleGradient
 import com.example.zerosekai.ui.components.ZeroTopBar
+import com.example.zerosekai.ui.components.navigateBottomBarRoute
 import com.example.zerosekai.ui.theme.ZAccent
 import com.example.zerosekai.ui.theme.ZBorderSoft
 import com.example.zerosekai.ui.theme.ZPrimary
@@ -104,13 +105,7 @@ fun ProfileScreen(
                 BottomBar(
                     currentRoute = "profile",
                     onNavigate = { route ->
-                        navController.navigate(route) {
-                            launchSingleTop = true
-                            restoreState = true
-                            popUpTo("home") {
-                                saveState = true
-                            }
-                        }
+                        navController.navigateBottomBarRoute(route)
                     }
                 )
             }

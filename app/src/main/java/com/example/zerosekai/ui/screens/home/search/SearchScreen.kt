@@ -50,6 +50,7 @@ import com.example.zerosekai.ui.components.ZeroEmptyState
 import com.example.zerosekai.ui.components.ZeroSectionHeader
 import com.example.zerosekai.ui.components.ZeroScreenBackground
 import com.example.zerosekai.ui.components.ZeroTopBar
+import com.example.zerosekai.ui.components.navigateBottomBarRoute
 import com.example.zerosekai.ui.components.zeroTextFieldColors
 import com.example.zerosekai.ui.theme.ZAccent
 import com.example.zerosekai.ui.theme.ZBorder
@@ -118,13 +119,7 @@ fun SearchScreen(
                 BottomBar(
                     currentRoute = "search",
                     onNavigate = { route ->
-                        navController.navigate(route) {
-                            launchSingleTop = true
-                            restoreState = true
-                            popUpTo("home") {
-                                saveState = true
-                            }
-                        }
+                        navController.navigateBottomBarRoute(route)
                     }
                 )
             }

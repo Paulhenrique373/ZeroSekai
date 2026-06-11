@@ -7,6 +7,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -19,6 +20,9 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -42,6 +46,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PersonAdd
@@ -68,6 +73,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -85,6 +91,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.lifecycleScope
 import com.example.zerosekai.data.model.User
 import com.example.zerosekai.navigation.NavGraph
@@ -99,6 +106,7 @@ import com.example.zerosekai.ui.theme.ZText
 import com.example.zerosekai.ui.theme.ZTextMuted
 import com.example.zerosekai.ui.theme.ZeroSekaiTheme
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthException
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -198,7 +206,7 @@ private fun ensureUserProfile(
                     .addOnFailureListener {
                         onError(
                             it.message
-                                ?: "Conta criada, mas o perfil nao foi salvo."
+                                ?: "Conta criada, mas o perfil não foi salvo."
                         )
                     }
             }
@@ -206,9 +214,92 @@ private fun ensureUserProfile(
         .addOnFailureListener {
             onError(
                 it.message
-                    ?: "Nao foi possivel carregar o perfil."
+                    ?: "Não foi possível carregar o perfil."
             )
         }
+}
+
+private fun authFriendlyMessage(
+    exception: Exception?,
+    isLogin: Boolean
+): String {
+    val code =
+        (exception as? FirebaseAuthException)
+            ?.errorCode
+            .orEmpty()
+
+    val rawMessage =
+        exception
+            ?.localizedMessage
+            .orEmpty()
+
+    val normalizedMessage =
+        rawMessage.lowercase()
+
+    return when {
+        code == "ERROR_EMAIL_ALREADY_IN_USE" ||
+            normalizedMessage.contains("already in use") ||
+            normalizedMessage.contains("já está em uso") -> {
+            "Esse email já está cadastrado."
+        }
+
+        code == "ERROR_INVALID_EMAIL" ||
+            normalizedMessage.contains("badly formatted") -> {
+            "Email inválido."
+        }
+
+        code == "ERROR_WRONG_PASSWORD" ||
+            code == "ERROR_INVALID_CREDENTIAL" ||
+            normalizedMessage.contains("invalid_login_credentials") ||
+            normalizedMessage.contains("password is invalid") -> {
+            "Email ou senha incorretos."
+        }
+
+        code == "ERROR_USER_NOT_FOUND" ||
+            normalizedMessage.contains("no user record") -> {
+            "Você precisa criar uma conta primeiro."
+        }
+
+        code == "ERROR_WEAK_PASSWORD" ||
+            normalizedMessage.contains("password should be at least") -> {
+            "A senha precisa ter pelo menos 6 caracteres."
+        }
+
+        code == "ERROR_NETWORK_REQUEST_FAILED" ||
+            normalizedMessage.contains("network error") -> {
+            "Sem conexão com a internet. Tente novamente."
+        }
+
+        code == "ERROR_TOO_MANY_REQUESTS" ||
+            normalizedMessage.contains("too many attempts") -> {
+            "Muitas tentativas. Aguarde um pouco e tente novamente."
+        }
+
+        code == "ERROR_OPERATION_NOT_ALLOWED" ||
+            normalizedMessage.contains("operation_not_allowed") -> {
+            "Cadastro por email e senha não está ativado no Firebase."
+        }
+
+        normalizedMessage.contains("configuration_not_found") -> {
+            "Configuração do Firebase Auth não encontrada."
+        }
+
+        rawMessage.isNotBlank() -> {
+            if (isLogin) {
+                "Não foi possível entrar: $rawMessage"
+            } else {
+                "Não foi possível criar sua conta: $rawMessage"
+            }
+        }
+
+        isLogin -> {
+            "Não foi possível entrar. Confira seus dados."
+        }
+
+        else -> {
+            "Não foi possível criar sua conta."
+        }
+    }
 }
 
 @Composable
@@ -466,7 +557,10 @@ fun LoginScreen(
                     }
 
                     showAuthMessage(
-                        message = errorMessage,
+                        message = authFriendlyMessage(
+                            exception = it.exception,
+                            isLogin = true
+                        ),
                         isError = true
                     )
                 }
@@ -538,7 +632,10 @@ fun LoginScreen(
                     }
 
                     showAuthMessage(
-                        message = errorMessage,
+                        message = authFriendlyMessage(
+                            exception = it.exception,
+                            isLogin = false
+                        ),
                         isError = true
                     )
                 }
@@ -600,9 +697,9 @@ fun LoginScreen(
                     .background(
                         Brush.verticalGradient(
                             colors = listOf(
-                                ZBackground.copy(alpha = 0.44f),
-                                ZBackground.copy(alpha = 0.52f),
-                                ZBackground.copy(alpha = 0.94f)
+                                Color.Black.copy(alpha = 0.36f),
+                                Color.Black.copy(alpha = 0.46f),
+                                Color.Black.copy(alpha = 0.88f)
                             )
                         )
                     )
@@ -614,9 +711,9 @@ fun LoginScreen(
                     .background(
                         Brush.radialGradient(
                             colors = listOf(
-                                ZAccent.copy(alpha = 0.18f),
+                                ZAccent.copy(alpha = 0.16f),
                                 Color.Transparent,
-                                ZBackground.copy(alpha = 0.58f)
+                                Color.Black.copy(alpha = 0.42f)
                             )
                         )
                     )
@@ -626,26 +723,23 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxSize()
             ) {
                 val compact =
-                    maxHeight < 720.dp
+                    maxHeight < 740.dp
 
                 val horizontalPadding =
-                    if (compact) 22.dp else 40.dp
+                    if (compact) 24.dp else 34.dp
 
                 val topSpace =
-                    if (compact) 26.dp else 58.dp
-
-                val titleBottomSpace =
-                    if (compact) 8.dp else 10.dp
+                    if (compact) 18.dp else 36.dp
 
                 val formTopSpace =
                     if (compact) {
-                        if (authMessage.isNullOrBlank()) 22.dp else 12.dp
+                        if (authMessage.isNullOrBlank()) 8.dp else 6.dp
                     } else {
-                        if (authMessage.isNullOrBlank()) 38.dp else 20.dp
+                        if (authMessage.isNullOrBlank()) 26.dp else 18.dp
                     }
 
                 val fieldHeight =
-                    if (compact) 58.dp else 70.dp
+                    if (compact) 54.dp else 64.dp
 
                 val fieldGap =
                     if (compact) 12.dp else 16.dp
@@ -654,10 +748,10 @@ fun LoginScreen(
                     if (compact) 54.dp else 62.dp
 
                 val sectionGap =
-                    if (compact) 14.dp else 22.dp
+                    if (compact) 12.dp else 20.dp
 
                 val accountButtonHeight =
-                    if (compact) 48.dp else 56.dp
+                    if (compact) 50.dp else 58.dp
 
                 Column(
                     modifier = Modifier
@@ -665,7 +759,7 @@ fun LoginScreen(
                         .safeDrawingPadding()
                         .imePadding()
                         .verticalScroll(rememberScrollState())
-                        .padding(horizontal = horizontalPadding, vertical = 12.dp),
+                        .padding(horizontal = horizontalPadding, vertical = 10.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Top
                 ) {
@@ -675,49 +769,20 @@ fun LoginScreen(
                         compact = compact
                     )
 
-                    Spacer(modifier = Modifier.height(if (compact) 16.dp else 24.dp))
+                    Spacer(modifier = Modifier.height(if (compact) 18.dp else 24.dp))
 
-                    Text(
-                        text = buildAnnotatedString {
-                            append(
-                                if (isLogin) {
-                                    "Bem-vindo ao\n"
-                                } else {
-                                    "Crie sua conta\n"
-                                }
-                            )
-
-                            withStyle(
-                                SpanStyle(
-                                    color = ZAccent,
-                                    fontWeight = FontWeight.ExtraBold
-                                )
-                            ) {
-                                append("ZEROSEKAI")
-                            }
-                        },
-                        color = ZText,
-                        style = if (compact) {
-                            MaterialTheme.typography.headlineSmall
-                        } else {
-                            MaterialTheme.typography.headlineMedium
-                        },
-                        fontWeight = FontWeight.ExtraBold,
-                        textAlign = TextAlign.Center,
-                        lineHeight = if (compact) {
-                            MaterialTheme.typography.headlineSmall.lineHeight
-                        } else {
-                            MaterialTheme.typography.headlineMedium.lineHeight
-                        }
+                    LoginHeroTitle(
+                        isLogin = isLogin,
+                        compact = compact
                     )
 
-                    Spacer(modifier = Modifier.height(titleBottomSpace))
+                    Spacer(modifier = Modifier.height(if (compact) 6.dp else 10.dp))
 
                     Text(
                         text = if (isLogin) {
                             "Conecte-se ao seu universo"
                         } else {
-                            "Comece sua jornada no seu universo"
+                            "Comece sua jornada no ZEROSEKAI"
                         },
                         color = ZTextMuted,
                         style = if (compact) {
@@ -753,7 +818,7 @@ fun LoginScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .widthIn(max = 440.dp),
+                            .widthIn(max = 500.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         LoginGlassPanel(
@@ -766,6 +831,7 @@ fun LoginScreen(
                                     authMessage = null
                                 },
                                 placeholder = "Email",
+                                supportingPlaceholder = "seu@email.com",
                                 leadingIcon = {
                                     LoginLeadingIcon(
                                         icon = Icons.Default.Email,
@@ -790,6 +856,7 @@ fun LoginScreen(
                                     authMessage = null
                                 },
                                 placeholder = "Senha",
+                                supportingPlaceholder = "Digite sua senha",
                                 leadingIcon = {
                                     LoginLeadingIcon(
                                         icon = Icons.Default.Lock,
@@ -809,6 +876,7 @@ fun LoginScreen(
                                             } else {
                                                 Icons.Default.Visibility
                                             },
+                                            tint = ZText.copy(alpha = 0.86f),
                                             contentDescription = if (passwordVisible) {
                                                 "Ocultar senha"
                                             } else {
@@ -860,7 +928,7 @@ fun LoginScreen(
                                     )
                                 }
                             } else {
-                                Spacer(modifier = Modifier.height(fieldGap))
+                                Spacer(modifier = Modifier.height(if (compact) 8.dp else fieldGap))
                             }
 
                             LoginActionButton(
@@ -899,9 +967,9 @@ fun LoginScreen(
                                 )
                             }
 
-                            Spacer(modifier = Modifier.height(if (compact) 10.dp else 20.dp))
+                            Spacer(modifier = Modifier.height(if (compact) 6.dp else 20.dp))
 
-                            LoginFooter(
+                            LoginFooterClean(
                                 isLogin = isLogin,
                                 enabled = !isAuthenticating,
                                 compact = compact,
@@ -925,50 +993,108 @@ private fun LoginWordmark(
     compact: Boolean
 ) {
     Surface(
-        color = ZSurface.copy(alpha = 0.34f),
+        modifier = Modifier
+            .shadow(
+                elevation = 10.dp,
+                shape = RoundedCornerShape(999.dp),
+                clip = false
+            ),
+        color = Color.Black.copy(alpha = 0.34f),
         shape = RoundedCornerShape(999.dp),
         border = BorderStroke(
             width = 1.dp,
-            color = ZAccent.copy(alpha = 0.56f)
-        ),
-        tonalElevation = 0.dp,
-        shadowElevation = 0.dp
+            brush = Brush.linearGradient(
+                colors = listOf(
+                    Color(0xFF8A5CFF).copy(alpha = 0.72f),
+                    Color(0xFFFF4FD8).copy(alpha = 0.62f)
+                )
+            )
+        )
     ) {
         Row(
             modifier = Modifier.padding(
-                horizontal = if (compact) 14.dp else 18.dp,
-                vertical = if (compact) 7.dp else 9.dp
+                horizontal = if (compact) 16.dp else 20.dp,
+                vertical = if (compact) 8.dp else 10.dp
             ),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
             Box(
                 modifier = Modifier
-                    .size(if (compact) 8.dp else 10.dp)
+                    .size(if (compact) 26.dp else 32.dp)
                     .clip(RoundedCornerShape(999.dp))
                     .background(
                         Brush.linearGradient(
                             colors = listOf(
-                                Color(0xFFFF2FA3),
-                                Color(0xFFB84DFF)
+                                Color(0xFF7C35FF),
+                                Color(0xFFFF4FD8)
                             )
                         )
-                    )
-            )
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Z",
+                    color = Color.White,
+                    fontSize = if (compact) 16.sp else 19.sp,
+                    fontWeight = FontWeight.ExtraBold
+                )
+            }
 
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(10.dp))
 
             Text(
                 text = "ZEROSEKAI",
                 color = ZText,
-                style = if (compact) {
-                    MaterialTheme.typography.labelLarge
-                } else {
-                    MaterialTheme.typography.titleSmall
-                },
+                fontSize = if (compact) 16.sp else 18.sp,
+                lineHeight = if (compact) 18.sp else 20.sp,
                 fontWeight = FontWeight.ExtraBold
             )
         }
+    }
+}
+
+@Composable
+private fun LoginHeroTitle(
+    isLogin: Boolean,
+    compact: Boolean
+) {
+    Text(
+        text = if (isLogin) {
+            "Bem-vindo ao"
+        } else {
+            "Criar conta"
+        },
+        color = ZText,
+        fontSize = if (compact) 23.sp else 30.sp,
+        lineHeight = if (compact) 26.sp else 34.sp,
+        fontWeight = FontWeight.ExtraBold,
+        textAlign = TextAlign.Center
+    )
+
+    if (isLogin) {
+        Text(
+            text = buildAnnotatedString {
+                withStyle(
+                    SpanStyle(
+                        brush = Brush.linearGradient(
+                            colors = listOf(
+                                Color(0xFF9B5CFF),
+                                Color(0xFFFF4FD8),
+                                Color(0xFFFF2FA3)
+                            )
+                        ),
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                ) {
+                    append("ZEROSEKAI")
+                }
+            },
+            fontSize = if (compact) 31.sp else 44.sp,
+            lineHeight = if (compact) 34.sp else 48.sp,
+            fontWeight = FontWeight.ExtraBold,
+            textAlign = TextAlign.Center
+        )
     }
 }
 
@@ -977,13 +1103,27 @@ private fun LoginGlassPanel(
     compact: Boolean,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    val shape = RoundedCornerShape(if (compact) 26.dp else 30.dp)
+
     Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = ZSurface.copy(alpha = 0.38f),
-        shape = RoundedCornerShape(if (compact) 24.dp else 30.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = if (compact) 18.dp else 28.dp,
+                shape = shape,
+                clip = false
+            ),
+        color = Color(0xFF080613).copy(alpha = 0.90f),
+        shape = shape,
         border = BorderStroke(
-            width = 1.dp,
-            color = ZAccent.copy(alpha = 0.42f)
+            width = 1.2.dp,
+            brush = Brush.linearGradient(
+                colors = listOf(
+                    Color(0xFF8A5CFF).copy(alpha = 0.76f),
+                    Color(0xFFFF4FD8).copy(alpha = 0.58f),
+                    Color(0xFF58E6FF).copy(alpha = 0.32f)
+                )
+            )
         ),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
@@ -994,15 +1134,15 @@ private fun LoginGlassPanel(
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
-                            Color.White.copy(alpha = 0.08f),
-                            ZSurface.copy(alpha = 0.16f),
-                            ZBackground.copy(alpha = 0.10f)
+                            Color.White.copy(alpha = 0.05f),
+                            Color(0xFF12061F).copy(alpha = 0.20f),
+                            Color.Black.copy(alpha = 0.22f)
                         )
                     )
                 )
                 .padding(
-                    horizontal = if (compact) 12.dp else 16.dp,
-                    vertical = if (compact) 14.dp else 18.dp
+                    horizontal = if (compact) 16.dp else 26.dp,
+                    vertical = if (compact) 18.dp else 26.dp
                 ),
             horizontalAlignment = Alignment.CenterHorizontally,
             content = content
@@ -1015,6 +1155,7 @@ private fun LoginTextField(
     value: String,
     onValueChange: (String) -> Unit,
     placeholder: String,
+    supportingPlaceholder: String,
     leadingIcon: @Composable () -> Unit,
     modifier: Modifier = Modifier,
     trailingIcon: (@Composable () -> Unit)? = null,
@@ -1035,11 +1176,13 @@ private fun LoginTextField(
         placeholder = {
             Text(
                 text = placeholder,
+                color = ZText.copy(alpha = 0.74f),
                 style = if (compact) {
-                    MaterialTheme.typography.bodyLarge
+                    MaterialTheme.typography.bodyMedium
                 } else {
                     MaterialTheme.typography.titleMedium
-                }
+                },
+                fontWeight = FontWeight.Medium
             )
         },
         leadingIcon = leadingIcon,
@@ -1064,9 +1207,9 @@ private fun LoginLeadingIcon(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = ZAccent,
+            tint = Color(0xFFFF4FD8),
             modifier = Modifier.size(
-                if (compact) 24.dp else 30.dp
+                if (compact) 21.dp else 24.dp
             )
         )
 
@@ -1080,7 +1223,7 @@ private fun LoginLeadingIcon(
             modifier = Modifier
                 .height(if (compact) 28.dp else 34.dp)
                 .width(1.dp)
-                .background(ZBorder.copy(alpha = 0.72f))
+                .background(Color.White.copy(alpha = 0.16f))
         )
     }
 }
@@ -1101,8 +1244,8 @@ private fun AuthStatusMessage(
 
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(18.dp),
-        color = ZSurface.copy(alpha = 0.68f),
+        shape = RoundedCornerShape(20.dp),
+        color = Color(0xFF100919).copy(alpha = 0.82f),
         border = BorderStroke(
             width = 1.dp,
             color = accentColor.copy(alpha = 0.72f)
@@ -1137,15 +1280,29 @@ private fun LoginActionButton(
     height: androidx.compose.ui.unit.Dp,
     compact: Boolean
 ) {
-    val shape = RoundedCornerShape(
-        if (compact) 18.dp else 26.dp
+    val shape = RoundedCornerShape(999.dp)
+    val interactionSource =
+        remember {
+            MutableInteractionSource()
+        }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) 0.98f else 1f,
+        label = "loginActionButtonScale"
     )
 
-    Button(
-        onClick = onClick,
-        enabled = enabled,
+    Box(
         modifier = modifier
             .height(height)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .shadow(
+                elevation = if (compact) 14.dp else 22.dp,
+                shape = shape,
+                clip = false
+            )
             .clip(shape)
             .background(
                 Brush.linearGradient(
@@ -1156,39 +1313,56 @@ private fun LoginActionButton(
                     )
                 )
             ),
-        shape = shape,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Color.Transparent,
-            contentColor = ZText,
-            disabledContainerColor = Color.Transparent,
-            disabledContentColor = ZTextMuted
-        ),
-        elevation = ButtonDefaults.buttonElevation(
-            defaultElevation = 0.dp,
-            pressedElevation = 0.dp
-        ),
-        border = BorderStroke(
-            width = 1.dp,
-            color = Color.White.copy(alpha = 0.22f)
-        ),
-        contentPadding = PaddingValues(horizontal = 22.dp)
+        contentAlignment = Alignment.Center
     ) {
-        if (loading) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(24.dp),
-                color = ZText,
-                strokeWidth = 2.5.dp
-            )
-        } else {
-            Text(
-                text = text,
-                style = if (compact) {
-                    MaterialTheme.typography.titleMedium
-                } else {
-                    MaterialTheme.typography.titleLarge
-                },
-                fontWeight = FontWeight.ExtraBold
-            )
+        Button(
+            onClick = onClick,
+            enabled = enabled,
+            interactionSource = interactionSource,
+            modifier = Modifier.fillMaxSize(),
+            shape = shape,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color.Transparent,
+                contentColor = ZText,
+                disabledContainerColor = Color.Transparent,
+                disabledContentColor = ZTextMuted
+            ),
+            elevation = ButtonDefaults.buttonElevation(
+                defaultElevation = 0.dp,
+                pressedElevation = 0.dp
+            ),
+            border = BorderStroke(
+                width = 1.dp,
+                color = Color.White.copy(alpha = 0.22f)
+            ),
+            contentPadding = PaddingValues(horizontal = 22.dp)
+        ) {
+            if (loading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = ZText,
+                    strokeWidth = 2.5.dp
+                )
+            } else {
+                Text(
+                    text = text,
+                    style = if (compact) {
+                        MaterialTheme.typography.titleMedium
+                    } else {
+                        MaterialTheme.typography.titleLarge
+                    },
+                    fontWeight = FontWeight.ExtraBold
+                )
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Icon(
+                    imageVector = Icons.Default.ArrowForward,
+                    contentDescription = null,
+                    tint = ZText,
+                    modifier = Modifier.size(if (compact) 22.dp else 26.dp)
+                )
+            }
         }
     }
 }
@@ -1206,12 +1380,19 @@ private fun LoginOrDivider(
             modifier = Modifier
                 .weight(1f)
                 .height(1.dp)
-                .background(ZBorder.copy(alpha = 0.70f))
+                .background(
+                    Brush.horizontalGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            Color(0xFFFF4FD8).copy(alpha = 0.68f)
+                        )
+                    )
+                )
         )
 
         Text(
             text = "ou",
-            color = ZTextMuted,
+            color = ZText.copy(alpha = 0.78f),
             style = if (compact) {
                 MaterialTheme.typography.bodyMedium
             } else {
@@ -1227,7 +1408,14 @@ private fun LoginOrDivider(
             modifier = Modifier
                 .weight(1f)
                 .height(1.dp)
-                .background(ZBorder.copy(alpha = 0.70f))
+                .background(
+                    Brush.horizontalGradient(
+                        colors = listOf(
+                            Color(0xFF9B5CFF).copy(alpha = 0.68f),
+                            Color.Transparent
+                        )
+                    )
+                )
         )
     }
 }
@@ -1239,47 +1427,136 @@ private fun CreateAccountButton(
     compact: Boolean,
     onClick: () -> Unit
 ) {
-    Button(
-        onClick = onClick,
-        enabled = enabled,
+    val shape = RoundedCornerShape(999.dp)
+    val interactionSource =
+        remember {
+            MutableInteractionSource()
+        }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) 0.98f else 1f,
+        label = "createAccountButtonScale"
+    )
+
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .height(height),
-        shape = RoundedCornerShape(
-            if (compact) 14.dp else 18.dp
-        ),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = ZSurface.copy(alpha = 0.36f),
-            contentColor = ZText,
-            disabledContainerColor = ZSurface.copy(alpha = 0.24f),
-            disabledContentColor = ZTextMuted
-        ),
-        elevation = ButtonDefaults.buttonElevation(
-            defaultElevation = 0.dp,
-            pressedElevation = 0.dp
-        ),
+            .height(height)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            },
+        color = Color.Black.copy(alpha = 0.18f),
+        shape = shape,
         border = BorderStroke(
             width = 1.2.dp,
-            color = ZAccent.copy(alpha = 0.86f)
+            brush = Brush.linearGradient(
+                colors = listOf(
+                    Color(0xFF9B5CFF),
+                    Color(0xFFFF4FD8)
+                )
+            )
         )
     ) {
-        Icon(
-            imageVector = Icons.Default.PersonAdd,
-            contentDescription = null,
-            tint = ZAccent,
-            modifier = Modifier.size(if (compact) 22.dp else 26.dp)
+        Button(
+            onClick = onClick,
+            enabled = enabled,
+            interactionSource = interactionSource,
+            modifier = Modifier.fillMaxSize(),
+            shape = shape,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color.Transparent,
+                contentColor = ZText,
+                disabledContainerColor = Color.Transparent,
+                disabledContentColor = ZTextMuted
+            ),
+            elevation = ButtonDefaults.buttonElevation(
+                defaultElevation = 0.dp,
+                pressedElevation = 0.dp
+            ),
+            contentPadding = PaddingValues(horizontal = 18.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.PersonAdd,
+                contentDescription = null,
+                tint = Color(0xFFFF4FD8),
+                modifier = Modifier.size(if (compact) 22.dp else 26.dp)
+            )
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Text(
+                text = "Criar uma conta",
+                style = if (compact) {
+                    MaterialTheme.typography.bodyMedium
+                } else {
+                    MaterialTheme.typography.titleMedium
+                },
+                fontWeight = FontWeight.Bold
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            Icon(
+                imageVector = Icons.Default.ArrowForward,
+                contentDescription = null,
+                tint = ZText.copy(alpha = 0.86f),
+                modifier = Modifier.size(if (compact) 22.dp else 24.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun LoginFooterClean(
+    isLogin: Boolean,
+    enabled: Boolean,
+    compact: Boolean,
+    onToggleMode: () -> Unit
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text(
+            text = if (isLogin) {
+                "Ainda não tem conta?"
+            } else {
+                "Já tem conta?"
+            },
+            color = ZTextMuted,
+            style = if (compact) {
+                MaterialTheme.typography.labelMedium
+            } else {
+                MaterialTheme.typography.bodyMedium
+            }
         )
 
-        Spacer(modifier = Modifier.width(12.dp))
+        Spacer(modifier = Modifier.width(6.dp))
 
         Text(
-            text = "Criar uma conta",
-            style = if (compact) {
-                MaterialTheme.typography.bodyMedium
+            text = if (isLogin) {
+                "Cadastre-se >"
             } else {
-                MaterialTheme.typography.titleMedium
+                "Entrar >"
             },
-            fontWeight = FontWeight.SemiBold
+            color = Color(0xFFFF4FD8),
+            style = if (compact) {
+                MaterialTheme.typography.labelLarge
+            } else {
+                MaterialTheme.typography.bodyLarge
+            },
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier
+                .clip(RoundedCornerShape(999.dp))
+                .clickable(enabled = enabled) {
+                    onToggleMode()
+                }
+                .padding(
+                    horizontal = 4.dp,
+                    vertical = 3.dp
+                )
         )
     }
 }
@@ -1312,26 +1589,29 @@ private fun LoginFooter(
 
         Spacer(modifier = Modifier.width(6.dp))
 
-        TextButton(
-            onClick = onToggleMode,
-            enabled = enabled,
-            contentPadding = PaddingValues(horizontal = 4.dp)
-        ) {
-            Text(
-                text = if (isLogin) {
-                    "Cadastre-se >"
-                } else {
-                    "Entrar >"
-                },
-                color = ZAccent,
-                style = if (compact) {
-                    MaterialTheme.typography.bodyMedium
-                } else {
-                    MaterialTheme.typography.bodyLarge
-                },
-                fontWeight = FontWeight.Bold
-            )
-        }
+        Text(
+            text = if (isLogin) {
+                "Cadastre-se >"
+            } else {
+                "Entrar >"
+            },
+            color = ZAccent,
+            style = if (compact) {
+                MaterialTheme.typography.bodyMedium
+            } else {
+                MaterialTheme.typography.bodyLarge
+            },
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier
+                .clip(RoundedCornerShape(999.dp))
+                .clickable(enabled = enabled) {
+                    onToggleMode()
+                }
+                .padding(
+                    horizontal = 4.dp,
+                    vertical = 4.dp
+                )
+        )
     }
 }
 
@@ -1351,10 +1631,10 @@ private fun loginTextFieldColors(): TextFieldColors =
         unfocusedTrailingIconColor = ZTextMuted,
         disabledTrailingIconColor = ZTextMuted.copy(alpha = 0.42f),
         cursorColor = Color(0xFFFF4FD8),
-        focusedBorderColor = Color(0xFFD36BFF).copy(alpha = 0.92f),
-        unfocusedBorderColor = Color(0xFF9D65FF).copy(alpha = 0.54f),
+        focusedBorderColor = Color(0xFFFF4FD8).copy(alpha = 0.86f),
+        unfocusedBorderColor = Color(0xFF9B5CFF).copy(alpha = 0.46f),
         disabledBorderColor = ZBorder.copy(alpha = 0.52f),
-        focusedContainerColor = ZSurface.copy(alpha = 0.52f),
-        unfocusedContainerColor = ZSurface.copy(alpha = 0.42f),
-        disabledContainerColor = ZSurface.copy(alpha = 0.28f)
+        focusedContainerColor = Color(0xFF0B0715).copy(alpha = 0.64f),
+        unfocusedContainerColor = Color(0xFF0B0715).copy(alpha = 0.54f),
+        disabledContainerColor = Color(0xFF0B0715).copy(alpha = 0.36f)
     )
